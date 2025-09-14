@@ -1,0 +1,689 @@
+    <!-- Modal Agregar/Editar Deuda -->
+    <div id="debtModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeDebtModal">&times;</span>
+            <h2 id="debtModalTitle">Agregar Deuda</h2>
+            <form id="debtForm">
+                <input type="hidden" id="debtId">
+                <div class="form-group">
+                    <label for="debtName">Nombre de la deuda:</label>
+                    <input type="text" id="debtName" name="debtName" required>
+                </div>
+                <div class="form-group">
+                    <label for="debtAmount">Monto original:</label>
+                    <input type="number" id="debtAmount" name="debtAmount" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="debtPaid">Pagado:</label>
+                    <input type="number" id="debtPaid" name="debtPaid" step="0.01" min="0" value="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="debtDueDate">Vencimiento:</label>
+                    <input type="date" id="debtDueDate" name="debtDueDate" required>
+                </div>
+                <button type="submit" class="btn-primary">Guardar Deuda</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Agregar/Editar Cobro -->
+    <div id="creditModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeCreditModal">&times;</span>
+            <h2 id="creditModalTitle">Agregar Préstamo</h2>
+            <form id="creditForm">
+                <input type="hidden" id="creditId">
+                <div class="form-group">
+                    <label for="creditName">Nombre del préstamo:</label>
+                    <input type="text" id="creditName" name="creditName" required>
+                </div>
+                <div class="form-group">
+                    <label for="creditAmount">Monto prestado:</label>
+                    <input type="number" id="creditAmount" name="creditAmount" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="creditReturned">Devuelto:</label>
+                    <input type="number" id="creditReturned" name="creditReturned" step="0.01" min="0" value="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="creditDate">Fecha préstamo:</label>
+                    <input type="date" id="creditDate" name="creditDate" required>
+                </div>
+                <button type="submit" class="btn-primary">Guardar Préstamo</button>
+            </form>
+        </div>
+    </div>
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Finance Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components/sidebar.css">
+    <link rel="stylesheet" href="css/components/header.css">
+    <link rel="stylesheet" href="css/components/stats-cards.css">
+    <link rel="stylesheet" href="css/components/charts.css">
+    <link rel="stylesheet" href="css/components/transactions.css">
+    <link rel="stylesheet" href="css/components/transactions-page.css">
+</head>
+
+<body>
+
+        <!-- Login/Register Modern Modal -->
+        <div id="authModal" class="auth-modal" style="display: block;">
+            <div class="auth-modal-content">
+                <div class="auth-visual-side">
+                      <img src="./img/login-illustration.jpg" alt="Ilustración" class="auth-illustration">
+                </div>
+                <div class="auth-form-side">
+                    <div id="loginSection">
+                        <h2 class="auth-title">Iniciar Sesión</h2>
+                        <form id="loginForm">
+                            <div class="form-group">
+                                <label for="loginEmail">Correo electrónico</label>
+                                <input type="email" id="loginEmail" name="email" required autocomplete="username">
+                            </div>
+                            <div class="form-group">
+                                <label for="loginPassword">Contraseña</label>
+                                <input type="password" id="loginPassword" name="password" required autocomplete="current-password">
+                            </div>
+                            <button type="submit" class="btn-primary">Iniciar Sesión</button>
+                        </form>
+                        <p class="auth-forgot-text"><a href="#" id="forgotPasswordLink">¿Olvidaste tu contraseña?</a></p>
+                        <p class="auth-switch-text">¿No tienes cuenta? <a href="#" id="showRegister">Regístrate aquí</a></p>
+                    </div>
+                    <div id="registerSection" style="display:none;">
+                        <h2 class="auth-title">Crear Cuenta</h2>
+                        <form id="registerForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="registerFirstName">Nombre</label>
+                                    <input type="text" id="registerFirstName" name="firstName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="registerLastName">Apellido</label>
+                                    <input type="text" id="registerLastName" name="lastName" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="registerPhone">Número de Teléfono</label>
+                                <input type="tel" id="registerPhone" name="phone" required pattern="[0-9]{10,15}" placeholder="Ej: 04141234567">
+                            </div>
+                            <div class="form-group">
+                                <label for="registerEmail">Correo electrónico</label>
+                                <input type="email" id="registerEmail" name="email" required autocomplete="username">
+                            </div>
+                            <div class="form-group">
+                                <label for="registerPassword">Contraseña</label>
+                                <input type="password" id="registerPassword" name="password" required minlength="6" autocomplete="new-password">
+                            </div>
+                            <button type="submit" class="btn-primary">Crear Cuenta</button>
+                        </form>
+                        <p class="auth-switch-text">¿Ya tienes cuenta? <a href="#" id="showLogin">Inicia sesión aquí</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- Main Application (hidden until login) -->
+    <div id="app" style="display: none;">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">$</div>
+                <div class="logo-text">FinanceApp</div>
+            </div>
+
+            <div class="user-profile">
+                <div class="avatar" id="userAvatar">MJ</div>
+                <div class="user-name" id="userName">Usuario</div>
+                <div class="user-subtitle" id="userSubtitle">Bienvenido de nuevo</div>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <div class="nav-icon">📊</div>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="transactions">
+                    <div class="nav-icon">💳</div>
+                    <span>Transactions</span>
+                </a>
+                <a href="#" class="nav-item" data-page="balance">
+                    <div class="nav-icon">💼</div>
+                    <span>Balance Personal</span>
+                </a>
+                <a href="#" class="nav-item" data-page="budget">
+                    <div class="nav-icon">📈</div>
+                    <span>Presupuesto</span>
+                </a>
+                <a href="#" class="nav-item" data-page="goals">
+                    <div class="nav-icon">🎯</div>
+                    <span>Metas</span>
+                </a>
+                <a href="#" class="nav-item" data-page="reports">
+                    <div class="nav-icon">📋</div>
+                    <span>Reportes</span>
+                </a>
+                <a href="#" class="nav-item" data-page="settings">
+                    <div class="nav-icon">⚙️</div>
+                    <span>Configuración</span>
+                </a>
+            </nav>
+
+            <a href="#" class="nav-item" id="logoutBtn">
+                <div class="nav-icon">🚪</div>
+                <span>Cerrar sesión</span>
+            </a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Dashboard Page (Default) -->
+            <div id="dashboard-page" class="page active">
+                <!-- Header -->
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Dashboard</h1>
+                        <p>Resumen de Finanzas Personales</p>
+                    </div>
+                    <div class="currency-selector">
+                        <div class="currency-flag">$</div>
+                        <span>USD - Dólar</span>
+                        <span>▼</span>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stats-metrics-row">
+                        <div class="stat-card balance-card">
+                            <div class="stat-header">
+                                <div class="stat-title">Balance Total</div>
+                            </div>
+                            <div class="stat-value" id="totalBalance">$0.00</div>
+                            <div class="stat-mini-chart">
+                                <div class="mini-wave"></div>
+                            </div>
+                        </div>
+                        <div class="stat-card expense-card">
+                            <div class="stat-header">
+                                <div class="stat-title">Gastos Mensuales</div>
+                            </div>
+                            <div class="stat-value" id="monthlyExpenses">$0.00</div>
+                            <div class="stat-mini-chart">
+                                <div class="mini-wave"></div>
+                            </div>
+                        </div>
+                        <div class="stat-card income-card">
+                            <div class="stat-header">
+                                <div class="stat-title">Ingresos Mensuales</div>
+                            </div>
+                            <div class="stat-value" id="monthlyIncome">$0.00</div>
+                            <div class="stat-mini-chart">
+                                <div class="mini-wave"></div>
+                            </div>
+                        </div>
+                        <div class="stat-card savings-card">
+                            <div class="stat-header">
+                                <div class="stat-title">Ahorros</div>
+                            </div>
+                            <div class="stat-value" id="totalSavings">$0.00</div>
+                            <div class="stat-mini-chart">
+                                <div class="mini-wave"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daily Spending Chart -->
+                <div class="daily-spending-section">
+                    <div class="chart-header">
+                        <div class="chart-title">Gastos Diarios - Últimos 7 Días</div>
+                        <div style="display: flex; gap: 16px; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #718096;">
+                                <div style="width: 12px; height: 12px; background: #4299e1; border-radius: 50%;"></div>
+                                <span>Gastos</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #718096;">
+                                <div style="width: 12px; height: 12px; background: #48bb78; border-radius: 50%;"></div>
+                                <span>Presupuesto Diario</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="daily-chart-container">
+                        <canvas id="dailySpendingChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Bottom Grid: Expenses by Category and Recent Transactions -->
+                <div class="bottom-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title">Gastos por Categoría</div>
+                            <a href="#" class="view-all">Ver Todos</a>
+                        </div>
+                        <div class="category-chart-container">
+                            <canvas id="categoryExpensesChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="recent-transactions">
+                        <div class="chart-header">
+                            <div class="chart-title">Transacciones Recientes</div>
+                            <a href="#" class="view-all" id="viewAllTransactions">Ver Todos</a>
+                        </div>
+                        <div id="transactionsList">
+                            <!-- Las transacciones se cargarán dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- FIN DE DASHBOARD-PAGE -->
+
+            <!-- Transactions Page (FUERA del dashboard-page) -->
+            <div id="transactions-page" class="page">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Transacciones</h1>
+                        <p>Gestión de ingresos, gastos y ahorros</p>
+                    </div>
+                    <div class="header-actions">
+                        <div class="filter-section">
+                            <label for="transactionTypeFilter">Tipo:</label>
+                            <select id="transactionTypeFilter">
+                                <option value="all">Todos</option>
+                                <option value="income">Ingresos</option>
+                                <option value="expense">Gastos</option>
+                                <option value="savings">Ahorros</option>
+                            </select>
+                            <label for="transactionCategoryFilter">Categoría:</label>
+                            <select id="transactionCategoryFilter">
+                                <option value="all">Todas</option>
+                                <!-- Las categorías se cargarán dinámicamente -->
+                            </select>
+                            <label for="transactionMonthFilter">Mes:</label>
+                            <input type="month" id="transactionMonthFilter">
+                        </div>
+                        <!-- Botón de nueva transacción eliminado -->
+                    </div>
+                </div>
+
+                <div class="transactions-container">
+                    <div class="transactions-header">
+                        <h2>Historial de Transacciones</h2>
+                    </div>
+
+                    <div class="transactions-list" id="fullTransactionsList">
+                        <!-- Todas las transacciones se cargarán aquí -->
+                    </div>
+
+                    <div class="transactions-summary">
+                        <div class="summary-card">
+                            <h3>Total Ingresos</h3>
+                            <span class="summary-amount positive" id="totalIncomeSummary">$0.00</span>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Total Gastos</h3>
+                            <span class="summary-amount negative" id="totalExpenseSummary">$0.00</span>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Total Ahorros</h3>
+                            <span class="summary-amount savings" id="totalSavingsSummary">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- FIN DE TRANSACTIONS-PAGE -->
+
+            <!-- Balance Personal Page -->
+            <div id="balance-page" class="page">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Balance Personal</h1>
+                        <p>Gestión profesional de deudas y cobros personales</p>
+                    </div>
+                </div>
+                <div class="balance-tabs" style="display:flex; gap:8px; margin-top:24px;">
+                    <button class="tab-btn active" id="tab-mis-deudas" style="padding:10px 24px; border-radius:8px 8px 0 0; border:none; background:#2B6CB0; color:#fff; font-weight:600; cursor:pointer;">&#128179; Mis Deudas</button>
+                    <button class="tab-btn" id="tab-me-deben" style="padding:10px 24px; border-radius:8px 8px 0 0; border:none; background:#EDF2F7; color:#2B6CB0; font-weight:600; cursor:pointer;">&#128100; Me Deben</button>
+                </div>
+                <div class="balance-content" style="background:#fff; border-radius:0 0 12px 12px; box-shadow:0 1px 3px rgba(0,0,0,0.07); padding:32px 24px;">
+                    <!-- Mis Deudas -->
+                    <div id="mis-deudas-section">
+                        <div style="display:flex; flex-wrap:wrap; gap:32px;">
+                            <div style="flex:2; min-width:320px;">
+                                <div style="display:flex; gap:12px; align-items:center; margin-bottom:18px;">
+                                    <input type="text" placeholder="Buscar deuda..." style="flex:1; padding:8px 12px; border-radius:6px; border:1px solid #E2E8F0;">
+                                    <select style="padding:8px 12px; border-radius:6px; border:1px solid #E2E8F0;">
+                                        <option>Todas las deudas</option>
+                                    </select>
+                                </div>
+                                <div id="debt-list"></div>
+                            </div>
+                            <div style="flex:1; min-width:260px;">
+                                <div style="background:#2B6CB0; color:#fff; border-radius:8px; padding:18px 16px; margin-bottom:18px;">
+                                    <div id="debt-summary"></div>
+                                    <div style="display:flex; justify-content:center; align-items:center; height:200px;">
+                                        <canvas id="deudaChart" width="180" height="180" style="max-width:180px; max-height:180px;"></canvas>
+                                    </div>
+                                </div>
+                                <div style="background:#fff; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,0.03); padding:16px;">
+                                    <div style="font-size:15px; font-weight:600; margin-bottom:10px; color:#2B6CB0;">Acciones Rápidas</div>
+                                    <button style="width:100%; background:#3182CE; color:#fff; border:none; border-radius:6px; padding:10px 0; font-size:15px; font-weight:600; margin-bottom:8px; cursor:pointer;">Agregar Nueva Deuda</button>
+                                    <button style="width:100%; background:#fff; color:#3182CE; border:2px solid #3182CE; border-radius:6px; padding:10px 0; font-size:15px; font-weight:600; margin-bottom:8px; cursor:pointer;">Registrar Pago</button>
+                                    <button style="width:100%; background:#EDF2F7; color:#A0AEC0; border:none; border-radius:6px; padding:10px 0; font-size:15px; font-weight:600; cursor:not-allowed;">Exportar Reporte</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Me Deben -->
+                    <div id="me-deben-section" style="display:none;">
+                        <div style="display:flex; flex-wrap:wrap; gap:32px;">
+                            <div style="flex:2; min-width:320px;">
+                                <div style="display:flex; gap:12px; align-items:center; margin-bottom:18px;">
+                                    <input type="text" placeholder="Buscar préstamo..." style="flex:1; padding:8px 12px; border-radius:6px; border:1px solid #E2E8F0;">
+                                    <select style="padding:8px 12px; border-radius:6px; border:1px solid #E2E8F0;">
+                                        <option>Todos los préstamos</option>
+                                    </select>
+                                </div>
+                                <div id="credit-list"></div>
+                            </div>
+                            <div style="flex:1; min-width:260px;">
+                                <div style="background:#2B6CB0; color:#fff; border-radius:8px; padding:18px 16px; margin-bottom:18px;">
+                                    <div id="credit-summary"></div>
+                                    <div style="display:flex; justify-content:center; align-items:center; height:200px;">
+                                        <canvas id="cobroChart" width="180" height="180" style="max-width:180px; max-height:180px;"></canvas>
+                                    </div>
+                                </div>
+                                <div style="background:#fff; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,0.03); padding:16px;">
+                                    <div style="font-size:15px; font-weight:600; margin-bottom:10px; color:#2B6CB0;">Acciones Rápidas</div>
+                                    <button style="width:100%; background:#00B5D8; color:#fff; border:none; border-radius:6px; padding:10px 0; font-size:15px; font-weight:600; margin-bottom:8px; cursor:pointer;">Nuevo Préstamo</button>
+                                    <button style="width:100%; background:#fff; color:#00B5D8; border:2px solid #00B5D8; border-radius:6px; padding:10px 0; font-size:15px; font-weight:600; margin-bottom:8px; cursor:pointer;">Registrar Cobro</button>
+                                    <button style="width:100%; background:#EDF2F7; color:#A0AEC0; border:none; border-radius:6px; padding:10px 0; font-size:15px; font-weight:600; cursor:not-allowed;">Exportar Reporte</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                // Tabs para Balance Personal con cambio de color
+                document.addEventListener('DOMContentLoaded', function() {
+                    const tabDeudas = document.getElementById('tab-mis-deudas');
+                    const tabCobros = document.getElementById('tab-me-deben');
+                    const sectionDeudas = document.getElementById('mis-deudas-section');
+                    const sectionCobros = document.getElementById('me-deben-section');
+                    function activarTab(tab) {
+                        if (tab === 'deudas') {
+                            tabDeudas.classList.add('active');
+                            tabCobros.classList.remove('active');
+                            sectionDeudas.style.display = '';
+                            sectionCobros.style.display = 'none';
+                            tabDeudas.style.background = '#2B6CB0';
+                            tabDeudas.style.color = '#fff';
+                            tabCobros.style.background = '#EDF2F7';
+                            tabCobros.style.color = '#2B6CB0';
+                        } else {
+                            tabCobros.classList.add('active');
+                            tabDeudas.classList.remove('active');
+                            sectionCobros.style.display = '';
+                            sectionDeudas.style.display = 'none';
+                            tabCobros.style.background = '#00B5D8';
+                            tabCobros.style.color = '#fff';
+                            tabDeudas.style.background = '#EDF2F7';
+                            tabDeudas.style.color = '#2B6CB0';
+                        }
+                    }
+                    tabDeudas.addEventListener('click', function() { activarTab('deudas'); });
+                    tabCobros.addEventListener('click', function() { activarTab('cobros'); });
+                    // Inicializar con la pestaña de deudas activa
+                    activarTab('deudas');
+                });
+                </script>
+            </div>
+
+            <!-- Otras páginas (Presupuesto, Metas, Reportes, Configuración) -->
+            <div id="budget-page" class="page">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Presupuesto</h1>
+                        <p>Gestión de presupuestos mensuales</p>
+                    </div>
+                </div>
+                <div class="page-placeholder">
+                    <p>📈 Contenido de Presupuesto en desarrollo</p>
+                </div>
+            </div>
+
+            <div id="goals-page" class="page">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Metas</h1>
+                        <p>Establece y sigue tus metas financieras</p>
+                    </div>
+                </div>
+                <div class="page-placeholder">
+                    <p>🎯 Contenido de Metas en desarrollo</p>
+                </div>
+            </div>
+
+            <div id="reports-page" class="page">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Reportes</h1>
+                        <p>Reportes detallados de tus finanzas</p>
+                    </div>
+                </div>
+                <div class="page-placeholder">
+                    <p>📋 Contenido de Reportes en desarrollo</p>
+                </div>
+            </div>
+
+            <div id="settings-page" class="page">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Configuración</h1>
+                        <p>Configura tu aplicación</p>
+                    </div>
+                </div>
+                <div class="page-placeholder">
+                    <p>⚙️ Contenido de Configuración en desarrollo</p>
+                </div>
+            </div>
+        </div> <!-- FIN DE MAIN-CONTENT -->
+
+        <!-- Transaction Modal -->
+        <div id="transactionModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="transactionModalTitle">Agregar Transacción</h2>
+                <form id="transactionForm">
+                    <input type="hidden" id="transactionId">
+                    <div class="form-group">
+                        <label for="type">Tipo:</label>
+                        <select id="type" name="type" required>
+                            <option value="income">Ingreso</option>
+                            <option value="expense">Gasto</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="amount">Monto:</label>
+                        <input type="number" id="amount" name="amount" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group" id="categoryGroup">
+                        <label for="category">Categoría:</label>
+                        <select id="category" name="category" required>
+                            <!-- Las opciones se cargarán dinámicamente según el tipo -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Descripción:</label>
+                        <input type="text" id="description" name="description" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Fecha:</label>
+                        <input type="date" id="date" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="time">Hora:</label>
+                        <input type="time" id="time" name="time" required>
+                    </div>
+                    <div class="form-buttons">
+                        <button type="submit" class="btn-primary" id="transactionSubmitBtn">Guardar Transacción</button>
+                        <button type="button" class="btn-danger" id="transactionDeleteBtn"
+                            style="display: none;">Eliminar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Transfer Modal -->
+        <div id="transferModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Transferir a Ahorros</h2>
+                <form id="transferForm">
+                    <div class="form-group">
+                        <label for="transferAmountModal">Monto a transferir:</label>
+                        <input type="number" id="transferAmountModal" step="0.01" min="0" required>
+                        <div class="balance-info">
+                            <span>Balance disponible: <span id="availableBalanceModal">$0.00</span></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="transferCategory">Categoría:</label>
+                        <select id="transferCategory" required>
+                            <option value="savings_transfer">Transferencia a Ahorros</option>
+                            <option value="emergency_fund">Fondo de Emergencia</option>
+                            <option value="investment">Inversión</option>
+                            <option value="goal">Meta Específica</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="transferDescription">Descripción:</label>
+                        <input type="text" id="transferDescription" placeholder="Descripción de la transferencia">
+                    </div>
+                    <button type="submit" class="btn-primary">Confirmar Transferencia</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Floating Button -->
+        <button id="addTransactionBtn" class="floating-btn">+</button>
+    </div> <!-- FIN DE APP -->
+
+    <!-- Scripts en el orden CORRECTO -->
+    <script src="firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/debt-credit.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/transactions.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/transactions-page.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        // Inicialización después de que todos los scripts estén cargados
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar Firebase
+            if (typeof firebaseConfig !== 'undefined') {
+                firebase.initializeApp(firebaseConfig);
+                console.log('Firebase inicializado');
+            }
+            
+            // Configurar event listeners para formularios de login/register
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const showRegister = document.getElementById('showRegister');
+            const showLogin = document.getElementById('showLogin');
+            const closeRegister = document.getElementById('closeRegister');
+            
+            if (loginForm) {
+                loginForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await handleLogin();
+                });
+            }
+            
+            // El event listener de registro se gestiona solo en app.js para evitar dobles registros
+            
+            if (showRegister) {
+                showRegister.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    UI.showRegisterModal();
+                });
+            }
+            
+            if (showLogin) {
+                showLogin.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    UI.showLoginModal();
+                });
+            }
+            
+            if (closeRegister) {
+                closeRegister.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    UI.hideModal(document.getElementById('registerModal'));
+                });
+            }
+            
+            // Inicializar listener de autenticación
+            if (typeof authManager !== 'undefined') {
+                authManager.initAuthStateListener();
+            }
+        });
+
+        // Listener para logout
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                if (typeof authManager !== 'undefined') {
+                    await authManager.logoutUser();
+                }
+                if (typeof App !== 'undefined') {
+                    App.reset();
+                }
+                if (typeof UI !== 'undefined') {
+                    UI.showLoginModal();
+                }
+            });
+        }
+
+        // Manejar inicio de sesión
+        async function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (typeof authManager !== 'undefined') {
+                const result = await authManager.loginUser(email, password);
+                
+                if (result.success) {
+                    if (typeof UI !== 'undefined') {
+                        UI.clearErrors();
+                    }
+                } else {
+                    if (typeof UI !== 'undefined') {
+                        UI.showError(result.error);
+                    }
+                }
+            }
+        }
+
+        // Lógica de registro centralizada en app.js
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,206 @@
+.stats-metrics-row {
+    display: flex;
+    gap: 32px;
+    overflow-x: unset;
+    padding-bottom: 8px;
+    width: 100%;
+    justify-content: center;
+    align-items: stretch;
+}
+
+.stats-metrics-row::-webkit-scrollbar {
+    height: 0;
+}
+/* Ocultar scrollbars para otros navegadores */
+.stats-metrics-row {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.stats-metrics-row::-webkit-scrollbar-thumb {
+    background: #00B5D8;
+    border-radius: 8px;
+}
+.stats-metrics-row::-webkit-scrollbar-track {
+    background: #E2E8F0;
+    border-radius: 8px;
+}
+
+.me-deben-card {
+    background: #00B5D8 !important;
+    color: #fff !important;
+    box-shadow: 0 2px 8px rgba(0,181,216,0.12);
+}
+.me-deben-card .stat-title,
+.me-deben-card .stat-value {
+    color: #fff !important;
+}
+.me-deben-card .stat-mini-chart {
+    background: linear-gradient(90deg, rgba(0,181,216,0.1), rgba(0,181,216,0.3)) !important;
+}
+.me-deben-card .mini-wave {
+    background: linear-gradient(90deg, #00B5D8, #38B2AC) !important;
+}
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+    min-width: 220px;
+    max-width: 300px;
+    flex: 1 1 220px;
+}
+/* Ocultar scrollbars para otros navegadores */
+.stats-metrics-row {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.stat-title {
+    color: #718096;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.stat-change {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.stat-change.positive {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.stat-change.negative {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+.stat-value {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.balance-card .stat-value { color: #38a169; }
+.expense-card .stat-value { color: #e53e3e; }
+.income-card .stat-value { color: #3182ce; }
+.savings-card .stat-value { color: #805ad5; }
+
+.stat-mini-chart {
+    height: 40px;
+    background: linear-gradient(90deg, rgba(66, 153, 225, 0.1), rgba(66, 153, 225, 0.3));
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.mini-wave {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    background: linear-gradient(90deg, #4299e1, #667eea);
+    border-radius: 4px;
+    opacity: 0.8;
+}
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.stat-title {
+    color: #718096;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.stat-change {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.stat-change.positive {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.stat-change.negative {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+.stat-value {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.balance-card .stat-value { color: #38a169; }
+.expense-card .stat-value { color: #e53e3e; }
+.income-card .stat-value { color: #3182ce; }
+.savings-card .stat-value { color: #805ad5; }
+
+.stat-mini-chart {
+    height: 40px;
+    background: linear-gradient(90deg, rgba(66, 153, 225, 0.1), rgba(66, 153, 225, 0.3));
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.mini-wave {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    background: linear-gradient(90deg, #4299e1, #667eea);
+    border-radius: 4px;
+    opacity: 0.8;
+}

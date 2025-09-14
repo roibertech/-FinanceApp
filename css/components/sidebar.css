@@ -1,0 +1,114 @@
+.sidebar {
+    width: 280px;
+    background: #1a202c;
+    padding: 24px 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Altura completa */
+    overflow-y: auto; /* Scroll si es necesario */
+}
+
+.logo {
+    padding: 0 24px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    width: 40px;
+    height: 40px;
+    background: #4299e1;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+}
+
+.logo-text {
+    color: white;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.user-profile {
+    padding: 0 24px 32px;
+    text-align: center;
+}
+
+.avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4299e1, #667eea);
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 32px;
+    font-weight: 600;
+}
+
+.user-name {
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.user-subtitle {
+    color: #a0aec0;
+    font-size: 14px;
+}
+
+.nav-menu {
+    flex: 1;
+    overflow-y: auto; /* Scroll en el menú si es necesario */
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    color: #a0aec0;
+    text-decoration: none;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.nav-item:hover,
+.nav-item.active {
+    color: white;
+    background: rgba(66, 153, 225, 0.1);
+    border-right: 3px solid #4299e1;
+}
+
+.nav-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 18px;
+}
+
+/* Scroll personalizado para sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: #2d3748;
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: #4a5568;
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: #718096;
+}
