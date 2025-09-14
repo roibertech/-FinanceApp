@@ -1,5 +1,39 @@
 // dashboard.js - Versión corregida
 class DashboardManager {
+    // Actualizar la card resumen de préstamos y deudas
+    updateLoansDebtsSummary() {
+        if (typeof debtCreditManager === 'undefined') return;
+        // Préstamos (credits)
+        const credits = debtCreditManager.credits || [];
+        const totalLoansGiven = credits.reduce((sum, c) => sum + (c.amount || 0), 0);
+        const totalLoansCollected = credits.reduce((sum, c) => sum + (c.returned || 0), 0);
+        const loansToCollect = Math.max(0, totalLoansGiven - totalLoansCollected);
+        // Deudas (debts)
+        const debts = debtCreditManager.debts || [];
+        const totalDebts = debts.reduce((sum, d) => sum + (d.amount || 0), 0);
+        const totalDebtsPaid = debts.reduce((sum, d) => sum + (d.paid || 0), 0);
+        const debtsPending = Math.max(0, totalDebts - totalDebtsPaid);
+
+        // Actualizar valores en la card
+        const el = (id) => document.getElementById(id);
+        if (el('loansToCollect')) el('loansToCollect').textContent = `$${loansToCollect.toFixed(2)}`;
+        if (el('debtsPending')) el('debtsPending').textContent = `$${debtsPending.toFixed(2)}`;
+        if (el('loansGiven')) el('loansGiven').textContent = `$${totalLoansGiven.toFixed(2)}`;
+        if (el('debtsPaid')) el('debtsPaid').textContent = `$${totalDebtsPaid.toFixed(2)}`;
+        if (el('loansCollected')) el('loansCollected').textContent = `$${totalLoansCollected.toFixed(2)}`;
+
+        // Progreso de cobro (préstamos)
+        let percentLoans = totalLoansGiven > 0 ? (totalLoansCollected / totalLoansGiven) * 100 : 0;
+        percentLoans = Math.round(percentLoans);
+        if (el('loansProgress')) el('loansProgress').style.width = percentLoans + '%';
+        if (el('loansProgressPercent')) el('loansProgressPercent').textContent = percentLoans + '%';
+
+        // Progreso de pago (deudas)
+        let percentDebts = totalDebts > 0 ? (totalDebtsPaid / totalDebts) * 100 : 0;
+        percentDebts = Math.round(percentDebts);
+        if (el('debtsProgress')) el('debtsProgress').style.width = percentDebts + '%';
+        if (el('debtsProgressPercent')) el('debtsProgressPercent').textContent = percentDebts + '%';
+    }
     constructor() {
         this.financesUnsubscribe = null;
         this.transactionsUnsubscribe = null;
@@ -15,6 +49,42 @@ class DashboardManager {
     init() {
         this.setupRealTimeListeners();
         this.updateDashboard();
+        // Listener para actualizar la card resumen cuando cambian deudas/préstamos
+        setTimeout(() => this.updateLoansDebtsSummary(), 1000);
+        document.addEventListener('debtCreditUpdated', () => this.updateLoansDebtsSummary());
+    // Listener para repintar la card de préstamos/deudas al cambiar el tamaño de la ventana
+    window.addEventListener('resize', () => this.updateLoansDebtsSummary());
+        // Acción para 'Ver Todos' de Balance
+        const viewAllBalance = document.getElementById('viewAllBalance');
+        if (viewAllBalance) {
+            viewAllBalance.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Marcar sidebar
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                const nav = document.querySelector('.nav-item[data-page="balance"]');
+                if (nav) nav.classList.add('active');
+                UI.showPage('balance-page');
+                // Forzar scroll absoluto al top
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+        // Acción para 'Ver Todos' de Transacciones Recientes
+        const viewAllTransactions = document.getElementById('viewAllTransactions');
+        if (viewAllTransactions) {
+            viewAllTransactions.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Marcar sidebar
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                const nav = document.querySelector('.nav-item[data-page="transactions"]');
+                if (nav) nav.classList.add('active');
+                UI.showPage('transactions-page');
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
     }
 
     // Configurar listeners en tiempo real
@@ -81,6 +151,8 @@ class DashboardManager {
             if (meDebenTotal) {
                 meDebenTotal.textContent = `$${porCobrar.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
             }
+            // Actualizar card resumen
+            this.updateLoansDebtsSummary();
         }
     }
 

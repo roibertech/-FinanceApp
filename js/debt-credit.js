@@ -371,8 +371,21 @@ class DebtCreditManager {
             // Editar crédito existente
             await this.updateCredit(id, { name, amount, returned: returnedInput, date });
         } else {
-            // Nuevo crédito
+            // Nuevo crédito (préstamo entregado): registrar como egreso
             await this.addCredit({ name, amount, returned: returnedInput, date });
+            if (window.transactionsManager) {
+                const now = new Date();
+                const dateNow = now.toISOString().split('T')[0];
+                const time = now.toTimeString().slice(0,5);
+                await window.transactionsManager.handleTransactionSubmitDirect({
+                    type: 'expense',
+                    amount: amount,
+                    category: 'other_expense',
+                    description: `Préstamo entregado: ${name}`,
+                    date: dateNow,
+                    time
+                });
+            }
         }
         form.reset();
         form.removeAttribute('data-mode');

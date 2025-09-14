@@ -279,6 +279,56 @@
                         </div>
                     </div>
 
+                    <div class="summary-card-dashboard">
+                        <div class="summary-header">
+                            <div class="summary-title">Resumen Préstamos y Deudas</div>
+                            <a href="#" class="view-all" id="viewAllBalance">Ver Todos</a>
+                        </div>
+                        <div class="summary-content">
+                            <div class="summary-row visual-row loan-row">
+                                <span class="summary-icon" style="background:#f6ffed;color:#38a169;">💸</span>
+                                <span class="summary-label">Préstamos por Cobrar</span>
+                                <span class="summary-value big" id="loansToCollect">$0.00</span>
+                            </div>
+                            <div class="summary-row visual-row debt-row">
+                                <span class="summary-icon" style="background:#fff7ed;color:#e53e3e;">⏳</span>
+                                <span class="summary-label">Deudas Pendientes</span>
+                                <span class="summary-value big" id="debtsPending">$0.00</span>
+                            </div>
+                            <div class="summary-row visual-row loan-given-row">
+                                <span class="summary-icon" style="background:#e6f0ff;color:#3182ce;">📈</span>
+                                <span class="summary-label">Préstamos Otorgados</span>
+                                <span class="summary-value" id="loansGiven">$0.00</span>
+                            </div>
+                            <div class="summary-row visual-row debt-paid-row">
+                                <span class="summary-icon" style="background:#f0eaff;color:#805ad5;">✅</span>
+                                <span class="summary-label">Deudas Pagadas</span>
+                                <span class="summary-value" id="debtsPaid">$0.00</span>
+                            </div>
+                            <div class="summary-row visual-row loan-collected-row">
+                                <span class="summary-icon" style="background:#fffbe6;color:#d69e2e;">💰</span>
+                                <span class="summary-label">Préstamos Cobrados</span>
+                                <span class="summary-value" id="loansCollected">$0.00</span>
+                            </div>
+                            <div class="summary-progress-group">
+                                <div class="summary-progress">
+                                    <span class="summary-label">Progreso de Cobro</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-bar-inner loan-progress" id="loansProgress" style="width: 0%"></div>
+                                    </div>
+                                    <span class="progress-percent loan-percent" id="loansProgressPercent">0%</span>
+                                </div>
+                                <div class="summary-progress">
+                                    <span class="summary-label">Progreso de Pago</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-bar-inner debt-progress" id="debtsProgress" style="width: 0%"></div>
+                                    </div>
+                                    <span class="progress-percent debt-percent" id="debtsProgressPercent">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="recent-transactions">
                         <div class="chart-header">
                             <div class="chart-title">Transacciones Recientes</div>

@@ -1,5 +1,34 @@
 // Gestión de la interfaz de usuario
 class UIManager {
+    // Mapear data-page a los ids reales de las páginas
+    getPageIdFromDataPage(dataPage) {
+        // Ajusta aquí si los ids de página no coinciden exactamente con data-page
+        if (dataPage === 'dashboard') return 'dashboard-page';
+        if (dataPage === 'transactions') return 'transactions-page';
+        if (dataPage === 'balance') return 'balance-page';
+        if (dataPage === 'budget') return 'budget-page';
+        if (dataPage === 'goals') return 'goals-page';
+        if (dataPage === 'reports') return 'reports-page';
+        if (dataPage === 'settings') return 'settings-page';
+        return dataPage + '-page';
+    }
+
+    // Mostrar una página por id y ocultar las demás
+    showPage(pageId) {
+        // Ocultar todas las páginas
+        document.querySelectorAll('.page').forEach(page => {
+            page.classList.remove('active');
+            page.style.display = 'none';
+        });
+        // Mostrar la página solicitada
+        const page = document.getElementById(pageId);
+        if (page) {
+            page.classList.add('active');
+            page.style.display = '';
+        }
+        // Si hay app principal, asegúrate de mostrarla
+        if (this.app) this.app.style.display = '';
+    }
     constructor() {
         this.modals = {
             login: document.getElementById('loginModal'),
@@ -25,6 +54,18 @@ class UIManager {
     }
 
     initEventListeners() {
+        // Navegación sidebar
+        document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Quitar clase active de todos
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                // Mostrar la página correspondiente
+                const pageId = this.getPageIdFromDataPage(item.getAttribute('data-page'));
+                this.showPage(pageId);
+            });
+        });
     this.initModalCloseListeners();
         // Mostrar modal de agregar deuda
         const addDebtBtns = document.querySelectorAll('button, .btn-primary');

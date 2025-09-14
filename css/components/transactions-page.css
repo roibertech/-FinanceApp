@@ -1,3 +1,118 @@
+.visual-row {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    align-items: center;
+    gap: 10px;
+}
+.summary-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 18px;
+    margin-right: 8px;
+    font-weight: 700;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.summary-value.big {
+    font-size: 1.35rem;
+    color: #222;
+    font-weight: 800;
+}
+.summary-progress-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+.loan-progress {
+    background: linear-gradient(90deg, #38A169 60%, #4299E1 100%);
+}
+.debt-progress {
+    background: linear-gradient(90deg, #e53e3e 60%, #805ad5 100%);
+}
+.loan-percent {
+    color: #38A169;
+}
+.debt-percent {
+    color: #e53e3e;
+}
+.summary-card-dashboard {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    padding: 24px 20px 20px 20px;
+    margin-top: 0;
+    margin-bottom: 0;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.summary-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #222;
+}
+.summary-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    padding: 2px 0;
+}
+.summary-label {
+    color: #718096;
+    font-weight: 500;
+}
+.summary-value {
+    font-weight: 700;
+    color: #2D3748;
+}
+.summary-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: #EDF2F7;
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 0 8px;
+}
+.progress-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, #38A169 60%, #4299E1 100%);
+    border-radius: 6px;
+    transition: width 0.4s;
+}
+.progress-percent {
+    font-size: 13px;
+    color: #38A169;
+    font-weight: 600;
+    min-width: 36px;
+    text-align: right;
+}
 .btn-small {
     padding: 4px 12px !important;
     font-size: 18px !important;
