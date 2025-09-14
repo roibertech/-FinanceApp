@@ -212,11 +212,91 @@
                         <h1>Dashboard</h1>
                         <p>Resumen de Finanzas Personales</p>
                     </div>
-                    <div class="currency-selector">
-                        <div class="currency-flag">$</div>
-                        <span>USD - Dólar</span>
-                        <span>▼</span>
+                    <div class="currency-selector custom-currency-selector">
+                        <div class="currency-flag" id="currencyFlag">$</div>
+                        <select id="currencySelect" class="custom-currency-select">
+                            <option value="USD">USD - Dólar</option>
+                            <option value="EUR">EUR - Euro</option>
+                            <option value="VES">BS - Bolívar</option>
+                        </select>
+                        <span class="currency-arrow">▼</span>
                     </div>
+</style>
+<style>
+/* Estilos modernos para el selector de moneda */
+.custom-currency-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafc;
+    border-radius: 22px;
+    box-shadow: 0 4px 16px rgba(52, 152, 219, 0.10), 0 1.5px 4px rgba(0,0,0,0.04);
+    padding: 8px 22px 8px 14px;
+    transition: box-shadow 0.2s, background 0.2s;
+    border: 1.5px solid #e2e8f0;
+    position: relative;
+    min-width: 170px;
+    cursor: pointer;
+}
+.custom-currency-selector:hover {
+    background: #eaf6ff;
+    box-shadow: 0 6px 24px rgba(52, 152, 219, 0.16), 0 2px 8px rgba(0,0,0,0.06);
+    border-color: #90cdf4;
+}
+.custom-currency-selector .currency-flag {
+    background: linear-gradient(135deg, #4299e1 60%, #90cdf4 100%);
+    color: #fff;
+    font-size: 1.3em;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(66,153,225,0.10);
+    font-weight: bold;
+    margin-right: 4px;
+}
+.custom-currency-select {
+    border: none;
+    background: transparent;
+    font-size: 1.08em;
+    font-weight: 600;
+    color: #222;
+    outline: none;
+    cursor: pointer;
+    padding: 4px 0 4px 2px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    min-width: 110px;
+    z-index: 2;
+}
+.custom-currency-select:focus {
+    outline: none;
+    color: #2563eb;
+}
+.currency-arrow {
+    font-size: 1em;
+    color: #4299e1;
+    margin-left: 2px;
+    pointer-events: none;
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+}
+/* Mejorar el menú desplegable en navegadores modernos */
+.custom-currency-select::-ms-expand {
+    display: none;
+}
+.custom-currency-select option {
+    background: #f8fafc;
+    color: #222;
+    font-weight: 500;
+}
+</style>
                 </div>
 
                 <!-- Stats Cards -->
@@ -647,6 +727,7 @@
 
     <!-- Scripts en el orden CORRECTO -->
     <script src="firebase-config.js"></script>
+    <script src="js/currency.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/database.js"></script>
     <script src="js/debt-credit.js"></script>

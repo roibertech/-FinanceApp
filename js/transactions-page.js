@@ -158,9 +158,7 @@ class TransactionsPage {
     displayTransactions() {
         const transactionsList = document.getElementById('fullTransactionsList');
         if (!transactionsList) return;
-        
         transactionsList.innerHTML = '';
-
         if (this.filteredTransactions.length === 0) {
             transactionsList.innerHTML = `
                 <div class="no-transactions">
@@ -169,7 +167,6 @@ class TransactionsPage {
             `;
             return;
         }
-
         this.filteredTransactions.forEach(transaction => {
             const transactionElement = this.createTransactionElement(transaction);
             transactionsList.appendChild(transactionElement);
@@ -178,15 +175,18 @@ class TransactionsPage {
 
     // Crear elemento HTML para una transacción (versión completa)
     createTransactionElement(transaction) {
-
         const div = document.createElement('div');
         div.className = 'transaction-item-full';
-
         const isIncome = transaction.type === 'income';
         const isSavings = transaction.type === 'savings';
         const sign = isIncome ? '+' : '-';
         const amountClass = isIncome ? 'positive' : (isSavings ? 'savings' : 'negative');
-
+        // Conversión de moneda
+        const cm = window.currencyManager;
+        const moneda = document.getElementById('currencySelect') ? document.getElementById('currencySelect').value : 'USD';
+        const base = (window.dashboardManager && window.dashboardManager.stats.baseCurrency) || 'USD';
+        const symbol = moneda === 'VES' ? 'Bs ' : (moneda === 'EUR' ? '€' : '$');
+        const amountConv = cm ? cm.convert(transaction.amount, base, moneda) : transaction.amount;
         // Formatear fecha y hora
         let formattedDate = '';
         let formattedTime = '';
@@ -207,7 +207,6 @@ class TransactionsPage {
             });
             formattedTime = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         }
-
         div.innerHTML = `
             <div class="transaction-icon-full">
                 ${transactionsManager.getCategoryIcon(transaction.category, transaction.type)}
@@ -218,7 +217,7 @@ class TransactionsPage {
                 <div class="transaction-date-full">${formattedDate} <span style="color:#CBD5E0;">|</span> <span style="font-size:11px;">${formattedTime}</span></div>
             </div>
             <div class="transaction-amount-full ${amountClass}">
-                ${sign}$${transaction.amount.toFixed(2)}
+                ${sign}${symbol}${amountConv.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
             </div>
             <div class="transaction-actions">
                 <button class="btn-icon edit" data-id="${transaction.id}">
@@ -229,25 +228,21 @@ class TransactionsPage {
                 </button>
             </div>
         `;
-
         // Agregar event listeners para editar y eliminar
         const editBtn = div.querySelector('.btn-icon.edit');
         const deleteBtn = div.querySelector('.btn-icon.delete');
-        
         if (editBtn) {
             editBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.editTransaction(transaction.id);
             });
         }
-        
         if (deleteBtn) {
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.deleteTransaction(transaction.id);
             });
         }
-
         return div;
     }
 
@@ -315,44 +310,48 @@ class TransactionsPage {
 
     // Actualizar resumen
     updateSummary() {
+        const cm = window.currencyManager;
+        const moneda = document.getElementById('currencySelect') ? document.getElementById('currencySelect').value : 'USD';
+        const base = (window.dashboardManager && window.dashboardManager.stats.baseCurrency) || 'USD';
+        const symbol = moneda === 'VES' ? 'Bs ' : (moneda === 'EUR' ? '€' : '$');
         const totalIncome = this.transactions
             .filter(t => t.type === 'income')
-            .reduce((sum, t) => sum + t.amount, 0);
-
+            .reduce((sum, t) => sum + (cm ? cm.convert(t.amount, base, moneda) : t.amount), 0);
         const totalExpense = this.transactions
             .filter(t => t.type === 'expense')
-            .reduce((sum, t) => sum + t.amount, 0);
-
+            .reduce((sum, t) => sum + (cm ? cm.convert(t.amount, base, moneda) : t.amount), 0);
         const totalSavings = this.transactions
             .filter(t => t.type === 'savings')
-            .reduce((sum, t) => sum + t.amount, 0);
-
+            .reduce((sum, t) => sum + (cm ? cm.convert(t.amount, base, moneda) : t.amount), 0);
         const totalIncomeElement = document.getElementById('totalIncomeSummary');
         const totalExpenseElement = document.getElementById('totalExpenseSummary');
         const totalSavingsElement = document.getElementById('totalSavingsSummary');
-        
         if (totalIncomeElement) {
-            totalIncomeElement.textContent = `$${totalIncome.toFixed(2)}`;
+            totalIncomeElement.textContent = symbol + totalIncome.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
         }
         if (totalExpenseElement) {
-            totalExpenseElement.textContent = `$${totalExpense.toFixed(2)}`;
+            totalExpenseElement.textContent = symbol + totalExpense.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
         }
         if (totalSavingsElement) {
-            totalSavingsElement.textContent = `$${totalSavings.toFixed(2)}`;
+            totalSavingsElement.textContent = symbol + totalSavings.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
         }
     }
 
     // Actualizar balance disponible - CORREGIDO (IDs duplicados)
     updateAvailableBalance() {
         const finances = dbManager.getCurrentFinances();
+        const cm = window.currencyManager;
+        const moneda = document.getElementById('currencySelect') ? document.getElementById('currencySelect').value : 'USD';
+        const base = (window.dashboardManager && window.dashboardManager.stats.baseCurrency) || 'USD';
+        const symbol = moneda === 'VES' ? 'Bs ' : (moneda === 'EUR' ? '€' : '$');
+        const balanceConv = cm ? cm.convert(finances.totalBalance, base, moneda) : finances.totalBalance;
         const balanceElement = document.getElementById('availableBalance');
         const modalBalanceElement = document.getElementById('availableBalanceModal');
-        
         if (balanceElement) {
-            balanceElement.textContent = `$${finances.totalBalance.toFixed(2)}`;
+            balanceElement.textContent = symbol + balanceConv.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
         }
         if (modalBalanceElement) {
-            modalBalanceElement.textContent = `$${finances.totalBalance.toFixed(2)}`;
+            modalBalanceElement.textContent = symbol + balanceConv.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
         }
     }
 }

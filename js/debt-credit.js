@@ -65,11 +65,19 @@ class DebtCreditManager {
             list.innerHTML = '<div class="empty">No hay deudas registradas.</div>';
             return;
         }
+        const cm = window.currencyManager;
+        const moneda = document.getElementById('currencySelect') ? document.getElementById('currencySelect').value : 'USD';
+        const base = (window.dashboardManager && window.dashboardManager.stats.baseCurrency) || 'USD';
+        const symbol = moneda === 'VES' ? 'Bs ' : (moneda === 'EUR' ? '€' : '$');
         debts.forEach(debt => {
             const pagado = debt.paid || 0;
             const restante = Math.max(0, (debt.amount || 0) - pagado);
             const porcentaje = debt.amount ? Math.min(100, Math.round((pagado / debt.amount) * 100)) : 0;
             const vencimiento = debt.dueDate ? new Date(debt.dueDate).toLocaleDateString() : '';
+            // Conversión
+            const amountConv = cm ? cm.convert(debt.amount || 0, base, moneda) : (debt.amount || 0);
+            const pagadoConv = cm ? cm.convert(pagado, base, moneda) : pagado;
+            const restanteConv = cm ? cm.convert(restante, base, moneda) : restante;
             const item = document.createElement('div');
             item.className = 'deuda-card';
             item.style = 'background:#F7FAFC; border-radius:8px; padding:20px; margin-bottom:18px; box-shadow:0 1px 2px rgba(0,0,0,0.03);';
@@ -78,12 +86,12 @@ class DebtCreditManager {
                     <div style="font-size:18px; font-weight:700; color:#2D3748;">${debt.name}</div>
                     <span style="background:#E53E3E; color:#fff; font-size:13px; border-radius:6px; padding:2px 10px; font-weight:600;">${restante > 0 ? 'Pendiente' : 'Pagado'}</span>
                 </div>
-                <div style="font-size:15px; color:#4A5568; margin-top:4px;">Monto original: <b>$${(debt.amount||0).toFixed(2)}</b></div>
-                <div style="font-size:15px; color:#4A5568;">Pagado: <b>$${pagado.toFixed(2)}</b> (${porcentaje}%)</div>
+                <div style="font-size:15px; color:#4A5568; margin-top:4px;">Monto original: <b>${symbol}${amountConv.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</b></div>
+                <div style="font-size:15px; color:#4A5568;">Pagado: <b>${symbol}${pagadoConv.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</b> (${porcentaje}%)</div>
                 <div style="margin:10px 0 6px 0; background:#E2E8F0; border-radius:6px; height:12px; width:100%;">
                     <div style="background:#38A169; width:${porcentaje}%; height:100%; border-radius:6px;"></div>
                 </div>
-                <div style="font-size:14px; color:#E53E3E;">Restante: $${restante.toFixed(2)}</div>
+                <div style="font-size:14px; color:#E53E3E;">Restante: ${symbol}${restanteConv.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
                 <div style="font-size:13px; color:#A0AEC0;">Vencimiento: ${vencimiento}</div>
                 <div style="margin-top:10px; display:flex; gap:8px;">
                     <button class="btn-pago" data-id="${debt.id}" data-type="debt" style="background:#3182CE; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-size:14px; font-weight:600; cursor:pointer;">Registrar Pago</button>
@@ -113,11 +121,19 @@ class DebtCreditManager {
             list.innerHTML = '<div class="empty">No hay cobros registrados.</div>';
             return;
         }
+        const cm = window.currencyManager;
+        const moneda = document.getElementById('currencySelect') ? document.getElementById('currencySelect').value : 'USD';
+        const base = (window.dashboardManager && window.dashboardManager.stats.baseCurrency) || 'USD';
+        const symbol = moneda === 'VES' ? 'Bs ' : (moneda === 'EUR' ? '€' : '$');
         credits.forEach(credit => {
             const devuelto = credit.returned || 0;
             const porCobrar = Math.max(0, (credit.amount || 0) - devuelto);
             const porcentaje = credit.amount ? Math.min(100, Math.round((devuelto / credit.amount) * 100)) : 0;
             const fecha = credit.date ? new Date(credit.date).toLocaleDateString() : '';
+            // Conversión
+            const amountConv = cm ? cm.convert(credit.amount || 0, base, moneda) : (credit.amount || 0);
+            const devueltoConv = cm ? cm.convert(devuelto, base, moneda) : devuelto;
+            const porCobrarConv = cm ? cm.convert(porCobrar, base, moneda) : porCobrar;
             const item = document.createElement('div');
             item.className = 'credito-card';
             item.style = 'background:#F7FAFC; border-radius:8px; padding:20px; margin-bottom:18px; box-shadow:0 1px 2px rgba(0,0,0,0.03);';
@@ -126,12 +142,12 @@ class DebtCreditManager {
                     <div style="font-size:18px; font-weight:700; color:#2D3748;">${credit.name}</div>
                     <span style="background:#ECC94B; color:#fff; font-size:13px; border-radius:6px; padding:2px 10px; font-weight:600;">${porCobrar > 0 ? 'Pendiente' : 'Cobrado'}</span>
                 </div>
-                <div style="font-size:15px; color:#4A5568; margin-top:4px;">Monto prestado: <b>$${(credit.amount||0).toFixed(2)}</b></div>
-                <div style="font-size:15px; color:#4A5568;">Devuelto: <b>$${devuelto.toFixed(2)}</b> (${porcentaje}%)</div>
+                <div style="font-size:15px; color:#4A5568; margin-top:4px;">Monto prestado: <b>${symbol}${amountConv.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</b></div>
+                <div style="font-size:15px; color:#4A5568;">Devuelto: <b>${symbol}${devueltoConv.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</b> (${porcentaje}%)</div>
                 <div style="margin:10px 0 6px 0; background:#E2E8F0; border-radius:6px; height:12px; width:100%;">
                     <div style="background:#38A169; width:${porcentaje}%; height:100%; border-radius:6px;"></div>
                 </div>
-                <div style="font-size:14px; color:#ECC94B;">Por cobrar: $${porCobrar.toFixed(2)}</div>
+                <div style="font-size:14px; color:#ECC94B;">Por cobrar: ${symbol}${porCobrarConv.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
                 <div style="font-size:13px; color:#A0AEC0;">Fecha préstamo: ${fecha}</div>
                 <div style="margin-top:10px; display:flex; gap:8px;">
                     <button class="btn-cobro" data-id="${credit.id}" data-type="credit" style="background:#3182CE; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-size:14px; font-weight:600; cursor:pointer;">Registrar Cobro</button>
@@ -156,23 +172,30 @@ class DebtCreditManager {
     renderDebtSummary(debts) {
         const summary = document.getElementById('debt-summary');
         if (!summary) return;
+        const cm = window.currencyManager;
+        const moneda = document.getElementById('currencySelect') ? document.getElementById('currencySelect').value : 'USD';
+        const base = (window.dashboardManager && window.dashboardManager.stats.baseCurrency) || 'USD';
+        const symbol = moneda === 'VES' ? 'Bs ' : (moneda === 'EUR' ? '€' : '$');
         const total = debts.reduce((sum, d) => sum + (d.amount || 0), 0);
         const pagado = debts.reduce((sum, d) => sum + (d.paid || 0), 0);
         const pendiente = Math.max(0, total - pagado);
+        const totalConv = cm ? cm.convert(total, base, moneda) : total;
+        const pagadoConv = cm ? cm.convert(pagado, base, moneda) : pagado;
+        const pendienteConv = cm ? cm.convert(pendiente, base, moneda) : pendiente;
         summary.innerHTML = `
             <div style="display:flex; align-items:center; gap:8px; font-size:18px; font-weight:700; margin-bottom:8px; color:#fff;">
                 <span style="font-size:22px;">&#128200;</span> Resumen de Deudas
             </div>
         `;
         // Gráfica doughnut
-    const ctx = document.getElementById('deudaChart').getContext('2d');
-    if (window.deudaChart && typeof window.deudaChart.destroy === 'function') window.deudaChart.destroy();
-    window.deudaChart = new Chart(ctx, {
+        const ctx = document.getElementById('deudaChart').getContext('2d');
+        if (window.deudaChart && typeof window.deudaChart.destroy === 'function') window.deudaChart.destroy();
+        window.deudaChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: ['Pagado', 'Pendiente'],
                 datasets: [{
-                    data: [pagado, pendiente],
+                    data: [pagadoConv, pendienteConv],
                     backgroundColor: ['#38A169', '#E53E3E'],
                     borderWidth: 2,
                     borderColor: '#fff',
@@ -193,7 +216,7 @@ class DebtCreditManager {
                                 const value = context.raw;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const percentage = total ? Math.round((value / total) * 100) : 0;
-                                return `${context.label}: $${value.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} (${percentage}%)`;
+                                return `${context.label}: ${symbol}${value.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} (${percentage}%)`;
                             }
                         }
                     }
@@ -207,8 +230,8 @@ class DebtCreditManager {
                 <div style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block;width:18px;height:8px;background:#E53E3E;border-radius:4px;"></span> Pendiente</div>
             </div>
             <div style="margin-top:18px;">
-                <div style="color:#38A169; font-weight:700; font-size:18px; margin-bottom:6px;">&#9679; Pagado: $${pagado.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
-                <div style="color:#E53E3E; font-weight:700; font-size:18px;">&#9679; Pendiente: $${pendiente.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+                <div style="color:#38A169; font-weight:700; font-size:18px; margin-bottom:6px;">&#9679; Pagado: ${symbol}${pagadoConv.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+                <div style="color:#E53E3E; font-weight:700; font-size:18px;">&#9679; Pendiente: ${symbol}${pendienteConv.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
             </div>
         `;
     }
@@ -216,23 +239,30 @@ class DebtCreditManager {
     renderCreditSummary(credits) {
         const summary = document.getElementById('credit-summary');
         if (!summary) return;
+        const cm = window.currencyManager;
+        const moneda = document.getElementById('currencySelect') ? document.getElementById('currencySelect').value : 'USD';
+        const base = (window.dashboardManager && window.dashboardManager.stats.baseCurrency) || 'USD';
+        const symbol = moneda === 'VES' ? 'Bs ' : (moneda === 'EUR' ? '€' : '$');
         const total = credits.reduce((sum, c) => sum + (c.amount || 0), 0);
         const devuelto = credits.reduce((sum, c) => sum + (c.returned || 0), 0);
         const porCobrar = Math.max(0, total - devuelto);
+        const totalConv = cm ? cm.convert(total, base, moneda) : total;
+        const devueltoConv = cm ? cm.convert(devuelto, base, moneda) : devuelto;
+        const porCobrarConv = cm ? cm.convert(porCobrar, base, moneda) : porCobrar;
         summary.innerHTML = `
             <div style="display:flex; align-items:center; gap:8px; font-size:18px; font-weight:700; margin-bottom:8px; color:#fff;">
                 <span style="font-size:22px;">&#128200;</span> Resumen de Cobros
             </div>
         `;
         // Gráfica doughnut
-    const ctx = document.getElementById('cobroChart').getContext('2d');
-    if (window.cobroChart && typeof window.cobroChart.destroy === 'function') window.cobroChart.destroy();
-    window.cobroChart = new Chart(ctx, {
+        const ctx = document.getElementById('cobroChart').getContext('2d');
+        if (window.cobroChart && typeof window.cobroChart.destroy === 'function') window.cobroChart.destroy();
+        window.cobroChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: ['Cobrado', 'Por cobrar'],
                 datasets: [{
-                    data: [devuelto, porCobrar],
+                    data: [devueltoConv, porCobrarConv],
                     backgroundColor: ['#38A169', '#ECC94B'],
                     borderWidth: 2,
                     borderColor: '#fff',
@@ -253,7 +283,7 @@ class DebtCreditManager {
                                 const value = context.raw;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const percentage = total ? Math.round((value / total) * 100) : 0;
-                                return `${context.label}: $${value.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} (${percentage}%)`;
+                                return `${context.label}: ${symbol}${value.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} (${percentage}%)`;
                             }
                         }
                     }
@@ -267,8 +297,8 @@ class DebtCreditManager {
                 <div style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block;width:18px;height:8px;background:#ECC94B;border-radius:4px;"></span> Por cobrar</div>
             </div>
             <div style="margin-top:18px;">
-                <div style="color:#38A169; font-weight:700; font-size:18px; margin-bottom:6px;">&#9679; Cobrado: $${devuelto.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
-                <div style="color:#ECC94B; font-weight:700; font-size:18px;">&#9679; Por cobrar: $${porCobrar.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+                <div style="color:#38A169; font-weight:700; font-size:18px; margin-bottom:6px;">&#9679; Cobrado: ${symbol}${devueltoConv.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+                <div style="color:#ECC94B; font-weight:700; font-size:18px;">&#9679; Por cobrar: ${symbol}${porCobrarConv.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
             </div>
         `;
     }

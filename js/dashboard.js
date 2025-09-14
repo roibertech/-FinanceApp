@@ -2,7 +2,10 @@
 class DashboardManager {
     // Actualizar la card resumen de préstamos y deudas
     updateLoansDebtsSummary() {
-        if (typeof debtCreditManager === 'undefined') return;
+        if (typeof debtCreditManager === 'undefined' || !window.currencyManager) return;
+        const cm = window.currencyManager;
+        const moneda = document.getElementById('currencySelect') ? document.getElementById('currencySelect').value : 'USD';
+        const base = this.stats.baseCurrency || 'USD';
         // Préstamos (credits)
         const credits = debtCreditManager.credits || [];
         const totalLoansGiven = credits.reduce((sum, c) => sum + (c.amount || 0), 0);
@@ -14,13 +17,14 @@ class DashboardManager {
         const totalDebtsPaid = debts.reduce((sum, d) => sum + (d.paid || 0), 0);
         const debtsPending = Math.max(0, totalDebts - totalDebtsPaid);
 
-        // Actualizar valores en la card
+        // Actualizar valores en la card con conversión
         const el = (id) => document.getElementById(id);
-        if (el('loansToCollect')) el('loansToCollect').textContent = `$${loansToCollect.toFixed(2)}`;
-        if (el('debtsPending')) el('debtsPending').textContent = `$${debtsPending.toFixed(2)}`;
-        if (el('loansGiven')) el('loansGiven').textContent = `$${totalLoansGiven.toFixed(2)}`;
-        if (el('debtsPaid')) el('debtsPaid').textContent = `$${totalDebtsPaid.toFixed(2)}`;
-        if (el('loansCollected')) el('loansCollected').textContent = `$${totalLoansCollected.toFixed(2)}`;
+        const symbol = moneda === 'VES' ? 'Bs ' : (moneda === 'EUR' ? '€' : '$');
+        if (el('loansToCollect')) el('loansToCollect').textContent = symbol + cm.convert(loansToCollect, base, moneda).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+        if (el('debtsPending')) el('debtsPending').textContent = symbol + cm.convert(debtsPending, base, moneda).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+        if (el('loansGiven')) el('loansGiven').textContent = symbol + cm.convert(totalLoansGiven, base, moneda).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+        if (el('debtsPaid')) el('debtsPaid').textContent = symbol + cm.convert(totalDebtsPaid, base, moneda).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+        if (el('loansCollected')) el('loansCollected').textContent = symbol + cm.convert(totalLoansCollected, base, moneda).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
 
         // Progreso de cobro (préstamos)
         let percentLoans = totalLoansGiven > 0 ? (totalLoansCollected / totalLoansGiven) * 100 : 0;
@@ -137,10 +141,15 @@ class DashboardManager {
 
     // Actualizar las tarjetas de estadísticas
     updateStatsCards(finances) {
-        document.getElementById('totalBalance').textContent = `$${finances.totalBalance.toFixed(2)}`;
-        document.getElementById('monthlyExpenses').textContent = `$${finances.monthlyExpenses.toFixed(2)}`;
-        document.getElementById('monthlyIncome').textContent = `$${finances.monthlyIncome.toFixed(2)}`;
-        document.getElementById('totalSavings').textContent = `$${finances.totalSavings.toFixed(2)}`;
+        // Conversión de moneda
+        const cm = window.currencyManager;
+        const moneda = document.getElementById('currencySelect') ? document.getElementById('currencySelect').value : 'USD';
+        const base = this.stats.baseCurrency || 'USD';
+        const symbol = moneda === 'VES' ? 'Bs ' : (moneda === 'EUR' ? '€' : '$');
+        document.getElementById('totalBalance').textContent = symbol + (cm ? cm.convert(finances.totalBalance, base, moneda).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) : finances.totalBalance.toFixed(2));
+        document.getElementById('monthlyExpenses').textContent = symbol + (cm ? cm.convert(finances.monthlyExpenses, base, moneda).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) : finances.monthlyExpenses.toFixed(2));
+        document.getElementById('monthlyIncome').textContent = symbol + (cm ? cm.convert(finances.monthlyIncome, base, moneda).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) : finances.monthlyIncome.toFixed(2));
+        document.getElementById('totalSavings').textContent = symbol + (cm ? cm.convert(finances.totalSavings, base, moneda).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) : finances.totalSavings.toFixed(2));
         // Actualizar tarjeta "Me Deben" si existe
         if (typeof debtCreditManager !== 'undefined' && debtCreditManager.credits) {
             const credits = debtCreditManager.credits;
@@ -149,7 +158,7 @@ class DashboardManager {
             const porCobrar = Math.max(0, total - devuelto);
             const meDebenTotal = document.getElementById('meDebenTotal');
             if (meDebenTotal) {
-                meDebenTotal.textContent = `$${porCobrar.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+                meDebenTotal.textContent = symbol + (cm ? cm.convert(porCobrar, base, moneda).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) : porCobrar.toFixed(2));
             }
             // Actualizar card resumen
             this.updateLoansDebtsSummary();
@@ -306,19 +315,22 @@ class DashboardManager {
     createTransactionElement(transaction) {
         const div = document.createElement('div');
         div.className = 'transaction-item';
-
         const isIncome = transaction.type === 'income';
         const isSavings = transaction.type === 'savings';
         const sign = isIncome ? '+' : '-';
         const amountClass = isIncome ? 'positive' : (isSavings ? 'savings' : 'negative');
-
+        // Conversión de moneda
+        const cm = window.currencyManager;
+        const moneda = document.getElementById('currencySelect') ? document.getElementById('currencySelect').value : 'USD';
+        const base = this.stats.baseCurrency || 'USD';
+        const symbol = moneda === 'VES' ? 'Bs ' : (moneda === 'EUR' ? '€' : '$');
+        const amountConv = cm ? cm.convert(transaction.amount, base, moneda) : transaction.amount;
         // Formatear fecha
         const date = new Date(transaction.date);
         const formattedDate = date.toLocaleDateString('es-ES', {
             day: '2-digit',
             month: 'short'
         });
-
         div.innerHTML = `
             <div class="transaction-icon">
                 ${transactionsManager.getCategoryIcon(transaction.category, transaction.type)}
@@ -328,13 +340,12 @@ class DashboardManager {
                 <div class="transaction-category">${transactionsManager.getCategoryLabel(transaction.category, transaction.type)}</div>
             </div>
             <div class="transaction-amount ${amountClass}">
-                ${sign}$${transaction.amount.toFixed(2)}
+                ${sign}${symbol}${amountConv.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
             </div>
             <div class="transaction-date">
                 ${formattedDate}
             </div>
         `;
-
         return div;
     }
 

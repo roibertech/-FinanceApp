@@ -105,40 +105,52 @@ class TransactionsManager {
 
     // Mostrar modal de transacción
     showTransactionModal() {
-    // Establecer fecha y hora actual por defecto
-    const now = new Date();
-    document.getElementById('date').value = now.toISOString().split('T')[0];
-    document.getElementById('time').value = now.toTimeString().slice(0,5);
-    // Siempre mostrar 'Agregar Transacción' al abrir
-    document.getElementById('transactionModalTitle').textContent = 'Agregar Transacción';
-    document.getElementById('transactionDeleteBtn').style.display = 'none';
-    document.getElementById('transactionForm').reset();
-    UI.showTransactionModal();
+        // Establecer fecha y hora actual por defecto
+        const now = new Date();
+        document.getElementById('date').value = now.toISOString().split('T')[0];
+        document.getElementById('time').value = now.toTimeString().slice(0,5);
+        // Siempre mostrar 'Agregar Transacción' al abrir
+        document.getElementById('transactionModalTitle').textContent = 'Agregar Transacción';
+        document.getElementById('transactionDeleteBtn').style.display = 'none';
+        document.getElementById('transactionForm').reset();
+        // Mostrar símbolo de moneda correcto en el input
+        const moneda = document.getElementById('currencySelect') ? document.getElementById('currencySelect').value : 'USD';
+        const symbol = moneda === 'VES' ? 'Bs' : (moneda === 'EUR' ? '€' : '$');
+        const amountInput = document.getElementById('amount');
+        if (amountInput) {
+            amountInput.placeholder = `Monto (${symbol})`;
+            amountInput.previousSymbol = symbol;
+        }
+        UI.showTransactionModal();
     }
 
     // Manejar envío del formulario de transacción
     async handleTransactionSubmit() {
         const type = document.getElementById('type').value;
-        const amount = parseFloat(document.getElementById('amount').value);
+        const amountInput = document.getElementById('amount');
+        let amount = parseFloat(amountInput.value);
         const category = document.getElementById('category').value;
         const description = document.getElementById('description').value;
         const date = document.getElementById('date').value;
         const time = document.getElementById('time').value;
-
         // Validaciones
         if (amount <= 0) {
             UI.showError('El monto debe ser mayor a cero');
             return;
         }
-
+        // Convertir a USD si la moneda seleccionada no es USD
+        const moneda = document.getElementById('currencySelect') ? document.getElementById('currencySelect').value : 'USD';
+        const cm = window.currencyManager;
+        if (cm && moneda !== 'USD') {
+            // Convertir de moneda seleccionada a USD
+            amount = cm.convert(amount, moneda, 'USD');
+        }
         if (type !== 'income' && amount > dbManager.getCurrentFinances().totalBalance) {
             UI.showError('Fondos insuficientes para esta transacción');
             return;
         }
-
         // Combinar fecha y hora en un solo string ISO
         const dateTime = date && time ? `${date}T${time}:00` : new Date().toISOString();
-
         const transaction = {
             type,
             amount,
@@ -146,10 +158,8 @@ class TransactionsManager {
             description,
             date: dateTime
         };
-
         const user = authManager.getCurrentUser();
         const result = await dbManager.addTransaction(transaction);
-
         if (result.success) {
             // Limpiar formulario
             document.getElementById('transactionForm').reset();
@@ -161,7 +171,6 @@ class TransactionsManager {
             document.getElementById('transactionModalTitle').textContent = 'Agregar Transacción';
             // Mostrar mensaje de éxito
             UI.showSuccess('Transacción agregada correctamente');
-
             // Si estamos en la página de transacciones, actualizar la lista automáticamente
             if (window.transactionsPage && window.transactionsPage.currentPage === 'transactions') {
                 window.transactionsPage.loadTransactions();
