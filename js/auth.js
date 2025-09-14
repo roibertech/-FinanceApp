@@ -73,7 +73,18 @@ class AuthManager {
             const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
             return { success: true, user: userCredential.user };
         } catch (error) {
-            return { success: false, error: error.message };
+            let msg = error.message;
+            // Si el error es de credenciales inválidas, personalizar el mensaje
+            if (
+                (typeof msg === 'string' &&
+                    (msg.includes('auth/invalid-login-credentials') ||
+                     msg.includes('invalid-login-credentials') ||
+                     msg.includes('Firebase: Error')))
+                || (error.code && error.code === 'auth/invalid-login-credentials')
+            ) {
+                msg = 'Su contraseña es incorrecta';
+            }
+            return { success: false, error: msg };
         }
     }
 

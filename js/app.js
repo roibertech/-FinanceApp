@@ -181,14 +181,19 @@ document.addEventListener('DOMContentLoaded', function() {
 async function handleLogin() {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
-    
+
     const result = await authManager.loginUser(email, password);
-    
+
     if (result.success) {
         UI.clearErrors();
         // El cambio de estado de autenticación se manejará en el listener
     } else {
-        UI.showError(result.error);
+        let msg = result.error;
+        // Reemplazar cualquier mensaje relacionado con credenciales inválidas
+        if (msg && typeof msg === 'string' && (msg.includes('auth/invalid-login-credentials') || msg.includes('invalid-login-credentials') || msg.includes('Firebase: Error'))) {
+            msg = 'Su contraseña es incorrecta';
+        }
+        UI.showError(msg);
     }
 }
 
