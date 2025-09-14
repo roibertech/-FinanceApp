@@ -1,5 +1,5 @@
     <!-- Modal Agregar/Editar Deuda -->
-    <div id="debtModal" class="modal">
+    <div id="debtModal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close" id="closeDebtModal">&times;</span>
             <h2 id="debtModalTitle">Agregar Deuda</h2>
@@ -27,7 +27,7 @@
     </div>
 
     <!-- Modal Agregar/Editar Cobro -->
-    <div id="creditModal" class="modal">
+    <div id="creditModal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close" id="closeCreditModal">&times;</span>
             <h2 id="creditModalTitle">Agregar Préstamo</h2>
@@ -79,6 +79,20 @@
 </head>
 
 <body>
+
+        <!-- Loader -->
+        <div id="loader" style="display: flex; align-items: center; justify-content: center; position: fixed; z-index: 9999; background: rgba(255,255,255,0.95); top: 0; left: 0; width: 100vw; height: 100vh;">
+            <div style="text-align:center;">
+                <div class="spinner" style="border: 6px solid #f3f3f3; border-top: 6px solid #3498db; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                <p style="margin-top: 20px; color: #333; font-size: 1.2em;">Cargando...</p>
+            </div>
+        </div>
+        <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        </style>
 
         <!-- Login/Register Modern Modal -->
         <div id="authModal" class="auth-modal" style="display: block;">

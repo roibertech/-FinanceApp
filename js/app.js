@@ -69,17 +69,23 @@ const App = new FinanceApp();
 
 // Inicializar Firebase y autenticación cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar Firebase (asegúrate de tener firebase-config.js)
-    
+    // Mostrar loader y ocultar login/app al iniciar
+    const loader = document.getElementById('loader');
+    const app = document.getElementById('app');
+    const authModal = document.getElementById('authModal');
+    if (loader) loader.style.display = 'flex';
+    if (app) app.style.display = 'none';
+    if (authModal) authModal.style.display = 'none';
+
     // Inicializar listener de autenticación
     authManager.initAuthStateListener();
-    
+
     // Configurar event listeners para formularios
     UI.forms.login.addEventListener('submit', async (e) => {
         e.preventDefault();
         await handleLogin();
     });
-    
+
     UI.forms.register.addEventListener('submit', async (e) => {
         e.preventDefault();
         await handleRegister();

@@ -19,6 +19,10 @@ class AuthManager {
     // Verificar estado de autenticación
     initAuthStateListener() {
         this.auth.onAuthStateChanged((user) => {
+            // Ocultar loader siempre que Firebase responda
+            const loader = document.getElementById('loader');
+            if (loader) loader.style.display = 'none';
+
             if (user) {
                 this.currentUser = user;
                 this.handleUserLoggedIn(user);
