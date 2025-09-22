@@ -7,6 +7,21 @@ const EXCHANGE_API_URL = `https://v6.exchangerate-api.com/v6/${EXCHANGE_API_KEY}
 const SUPPORTED_CURRENCIES = ['USD', 'EUR', 'VES'];
 
 class CurrencyManager {
+    // Devuelve la tasa de conversión directa entre dos monedas
+    getRate(from, to) {
+        if (from === to) return 1;
+        if (!this.rates[from] || !this.rates[to]) return 1;
+        // Tasa directa VES→USD
+        if (from === 'VES' && to === 'USD') {
+            return this.rates['VES'];
+        }
+        // Tasa directa USD→VES
+        if (from === 'USD' && to === 'VES') {
+            return 1 / this.rates['VES'];
+        }
+        // Tasa directa EUR→USD, USD→EUR, etc.
+        return this.rates[to] / this.rates[from];
+    }
     constructor() {
         this.rates = { USD: 1, EUR: 1, VES: 1 };
         this.base = 'USD';
@@ -23,6 +38,11 @@ class CurrencyManager {
                 this.rates = data.conversion_rates;
                 this.base = base;
                 this.lastUpdate = new Date();
+                // Log de tasa VES→USD obtenida
+                if (this.rates['VES'] && this.rates['USD']) {
+                    const rate = this.rates['VES'] / this.rates['USD'];
+                    console.log(`[API TASA] VES→USD: ${rate} | Fecha actualización: ${this.lastUpdate.toISOString()}`);
+                }
                 return true;
             }
         } catch (e) {

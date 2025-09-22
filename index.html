@@ -1,4 +1,4 @@
-    <!-- Modal Agregar/Editar Deuda -->
+<!-- Modal Agregar/Editar Deuda -->
     <div id="debtModal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close" id="closeDebtModal">&times;</span>
@@ -20,6 +20,18 @@
                 <div class="form-group">
                     <label for="debtDueDate">Vencimiento:</label>
                     <input type="date" id="debtDueDate" name="debtDueDate" required>
+                </div>
+                <!-- Selección de moneda y campos adicionales para pago -->
+                <div class="form-group">
+                    <label for="debtCurrency">Moneda de pago:</label>
+                    <select id="debtCurrency" name="debtCurrency" required>
+                        <option value="USD">Dólares ($)</option>
+                        <option value="VES">Bolívares (Bs)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="debtPayRateGroup" style="display:none;">
+                    <label for="debtPayRate">Tasa de cambio (Bs/$):</label>
+                    <input type="number" id="debtPayRate" name="debtPayRate" step="0.01" min="0">
                 </div>
                 <button type="submit" class="btn-primary">Guardar Deuda</button>
             </form>
@@ -49,10 +61,59 @@
                     <label for="creditDate">Fecha préstamo:</label>
                     <input type="date" id="creditDate" name="creditDate" required>
                 </div>
+                    <!-- Selección de moneda y campos adicionales para cobro -->
+                    <div class="form-group">
+                        <label for="creditCurrency">Moneda de cobro:</label>
+                        <select id="creditCurrency" name="creditCurrency" required>
+                            <option value="USD">Dólares ($)</option>
+                            <option value="VES">Bolívares (Bs)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="creditPayRateGroup" style="display:none;">
+                        <label for="creditPayRate">Tasa de cambio (Bs/$):</label>
+                        <input type="number" id="creditPayRate" name="creditPayRate" step="0.01" min="0">
+                    </div>
                 <button type="submit" class="btn-primary">Guardar Préstamo</button>
             </form>
         </div>
     </div>
+
+        <!-- Modal Cambio de Caja (Dólares ↔ Bolívares) -->
+        <div id="exchangeModal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <span class="close" id="closeExchangeModal">&times;</span>
+                <h2>Cambio de Caja</h2>
+                <form id="exchangeForm">
+                    <div class="form-group">
+                        <label for="exchangeFrom">Caja origen:</label>
+                        <select id="exchangeFrom" name="exchangeFrom" required>
+                            <option value="usd">Dólares</option>
+                            <option value="ves">Bolívares</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="exchangeTo">Caja destino:</label>
+                        <select id="exchangeTo" name="exchangeTo" required>
+                            <option value="ves">Bolívares</option>
+                            <option value="usd">Dólares</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="exchangeAmount">Monto a transferir:</label>
+                        <input type="number" id="exchangeAmount" name="exchangeAmount" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="exchangeRate">Tasa de cambio:</label>
+                        <input type="number" id="exchangeRate" name="exchangeRate" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="exchangeResult">Monto convertido:</label>
+                        <input type="text" id="exchangeResult" name="exchangeResult" readonly>
+                    </div>
+                    <button type="submit" class="btn-primary">Confirmar Cambio</button>
+                </form>
+            </div>
+        </div>
 <!DOCTYPE html>
 <html lang="es">
 
@@ -76,9 +137,77 @@
     <link rel="stylesheet" href="css/components/charts.css">
     <link rel="stylesheet" href="css/components/transactions.css">
     <link rel="stylesheet" href="css/components/transactions-page.css">
+    <link rel="stylesheet" href="css/components/text-danger.css">
 </head>
 
 <body>
+    <!-- Modal Historial de Deuda -->
+    <div id="debtHistoryModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" id="closeDebtHistoryModal">&times;</span>
+            <h2>Historial de Deuda</h2>
+            <div id="debtHistoryContent">
+                <!-- Aquí se renderiza el historial dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agregar Monto a Deuda -->
+    <div id="addDebtAmountModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" id="closeAddDebtAmountModal">&times;</span>
+            <h2 style="color:#2B6CB0;">Agregar monto a la deuda</h2>
+            <form id="addDebtAmountForm" style="background:#F7FAFC; border-radius:8px; padding:16px; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                <div class="form-group">
+                    <label for="addDebtAmount">Monto a agregar ($):</label>
+                    <input type="number" id="addDebtAmount" name="addDebtAmount" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="addDebtDate">Fecha:</label>
+                    <input type="date" id="addDebtDate" name="addDebtDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="addDebtDesc">Descripción:</label>
+                    <input type="text" id="addDebtDesc" name="addDebtDesc" maxlength="100" placeholder="Ej: Le quité pan, etc." required>
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top:10px;">Registrar aumento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Historial de Crédito -->
+    <div id="creditHistoryModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" id="closeCreditHistoryModal">&times;</span>
+            <h2>Historial de Préstamo</h2>
+            <div id="creditHistoryContent">
+                <!-- Aquí se renderiza el historial dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agregar Monto a Crédito -->
+    <div id="addCreditAmountModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" id="closeAddCreditAmountModal">&times;</span>
+            <h2 style="color:#2B6CB0;">Agregar monto al préstamo</h2>
+            <form id="addCreditAmountForm" style="background:#F7FAFC; border-radius:8px; padding:16px; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                <div class="form-group">
+                    <label for="addCreditAmount">Monto a agregar ($):</label>
+                    <input type="number" id="addCreditAmount" name="addCreditAmount" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="addCreditDate">Fecha:</label>
+                    <input type="date" id="addCreditDate" name="addCreditDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="addCreditDesc">Descripción:</label>
+                    <input type="text" id="addCreditDesc" name="addCreditDesc" maxlength="100" placeholder="Ej: Le presté para comida, etc." required>
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top:10px;">Registrar aumento</button>
+            </form>
+        </div>
+    </div>
 
         <!-- Loader -->
         <div id="loader" style="display: flex; align-items: center; justify-content: center; position: fixed; z-index: 9999; background: rgba(255,255,255,0.95); top: 0; left: 0; width: 100vw; height: 100vh;">
@@ -214,12 +343,7 @@
                     </div>
                     <div class="currency-selector custom-currency-selector">
                         <div class="currency-flag" id="currencyFlag">$</div>
-                        <select id="currencySelect" class="custom-currency-select">
-                            <option value="USD">USD - Dólar</option>
-                            <option value="EUR">EUR - Euro</option>
-                            <option value="VES">BS - Bolívar</option>
-                        </select>
-                        <span class="currency-arrow">▼</span>
+                        <span style="font-weight:600; color:#2563eb; font-size:1.08em; margin-left:8px;">USD - Dólar</span>
                     </div>
 </style>
 <style>
@@ -389,10 +513,10 @@
                                 <span class="summary-label">Deudas Pendientes</span>
                                 <span class="summary-value big" id="debtsPending">$0.00</span>
                             </div>
-                            <div class="summary-row visual-row loan-given-row">
-                                <span class="summary-icon" style="background:#e6f0ff;color:#3182ce;">📈</span>
-                                <span class="summary-label">Préstamos Otorgados</span>
-                                <span class="summary-value" id="loansGiven">$0.00</span>
+                            <div class="summary-row visual-row passive-income-row">
+                                <span class="summary-icon" style="background:#e6f0ff;color:#00B5D8;">🏠</span>
+                                <span class="summary-label">Ingresos Pasivos Pendientes</span>
+                                <span class="summary-value" id="passiveIncomePending">$0.00</span>
                             </div>
                             <div class="summary-row visual-row debt-paid-row">
                                 <span class="summary-icon" style="background:#f0eaff;color:#805ad5;">✅</span>
@@ -458,32 +582,61 @@
                             </select>
                             <label for="transactionMonthFilter">Mes:</label>
                             <input type="month" id="transactionMonthFilter">
+                            <button id="openExchangeModalBtn" class="btn-primary" style="margin-left:16px; padding:4px 12px; font-size:13px; float:right;">Cambio de caja</button>
                         </div>
                         <!-- Botón de nueva transacción eliminado -->
                     </div>
                 </div>
 
                 <div class="transactions-container">
-                    <div class="transactions-header">
-                        <h2>Historial de Transacciones</h2>
-                    </div>
-
-                    <div class="transactions-list" id="fullTransactionsList">
-                        <!-- Todas las transacciones se cargarán aquí -->
-                    </div>
-
-                    <div class="transactions-summary">
-                        <div class="summary-card">
-                            <h3>Total Ingresos</h3>
-                            <span class="summary-amount positive" id="totalIncomeSummary">$0.00</span>
+                    <!-- Card containers alineados horizontalmente -->
+                    <div class="transactions-cards-row" style="display:flex; gap:32px; margin-bottom:0; align-items:stretch;">
+                        <!-- Card container para Dólares ($) -->
+                            <div class="card-container" style="flex:1; background:#f8fafc; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px; min-height:350px;">
+                            <div class="transactions-summary" style="display:flex; gap:16px; margin-bottom:32px; justify-content:center;">
+                                <div class="summary-card" style="min-width:140px; max-width:220px; flex:1;">
+                                    <h3>Total Ingresos ($)</h3>
+                                    <span class="summary-amount positive" id="totalIncomeSummary">$0.00</span>
+                                </div>
+                                <div class="summary-card" style="min-width:140px; max-width:220px; flex:1;">
+                                    <h3>Total Gastos ($)</h3>
+                                    <span class="summary-amount negative" id="totalExpenseSummary">$0.00</span>
+                                </div>
+                                <div class="summary-card" style="min-width:140px; max-width:220px; flex:1;">
+                                    <h3>Total Dólares ($)</h3>
+                                    <span class="summary-amount savings" id="totalSavingsSummary">$0.00</span>
+                                </div>
+                            </div>
+                            <div class="transactions-history-card" style="background:#fff; border-radius:12px; padding:16px;">
+                                <h3 style="margin-bottom:12px;">Historial en Dólares ($)</h3>
+                                <div class="transactions-list" id="transactionsListUSD">
+                                    <!-- Transacciones en dólares se cargarán aquí -->
+                                </div>
+                            </div>
                         </div>
-                        <div class="summary-card">
-                            <h3>Total Gastos</h3>
-                            <span class="summary-amount negative" id="totalExpenseSummary">$0.00</span>
-                        </div>
-                        <div class="summary-card">
-                            <h3>Total Ahorros</h3>
-                            <span class="summary-amount savings" id="totalSavingsSummary">$0.00</span>
+
+                        <!-- Card container para Bolívares (Bs) -->
+                            <div class="card-container" style="flex:1; background:#f8fafc; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px; min-height:350px;">
+                            <div class="transactions-summary" style="display:flex; gap:16px; margin-bottom:32px; justify-content:center;">
+                                <div class="summary-card" style="min-width:140px; max-width:220px; flex:1;">
+                                    <h3>Total Ingresos (Bs)</h3>
+                                    <span class="summary-amount positive" id="totalIncomeSummaryBs">Bs 0.00</span>
+                                </div>
+                                <div class="summary-card" style="min-width:140px; max-width:220px; flex:1;">
+                                    <h3>Total Gastos (Bs)</h3>
+                                    <span class="summary-amount negative" id="totalExpenseSummaryBs">Bs 0.00</span>
+                                </div>
+                                <div class="summary-card" style="min-width:140px; max-width:220px; flex:1;">
+                                    <h3>Total Bolívares (Bs)</h3>
+                                    <span class="summary-amount savings" id="totalSavingsSummaryBs">Bs 0.00</span>
+                                </div>
+                            </div>
+                            <div class="transactions-history-card" style="background:#fff; border-radius:12px; padding:16px;">
+                                <h3 style="margin-bottom:12px;">Historial en Bolívares (Bs)</h3>
+                                <div class="transactions-list" id="transactionsListBs">
+                                    <!-- Transacciones en bolívares se cargarán aquí -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -552,7 +705,7 @@
                                 <div style="background:#fff; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,0.03); padding:16px;">
                                     <div style="font-size:15px; font-weight:600; margin-bottom:10px; color:#2B6CB0;">Acciones Rápidas</div>
                                     <button style="width:100%; background:#00B5D8; color:#fff; border:none; border-radius:6px; padding:10px 0; font-size:15px; font-weight:600; margin-bottom:8px; cursor:pointer;">Nuevo Préstamo</button>
-                                    <button style="width:100%; background:#fff; color:#00B5D8; border:2px solid #00B5D8; border-radius:6px; padding:10px 0; font-size:15px; font-weight:600; margin-bottom:8px; cursor:pointer;">Registrar Cobro</button>
+                                    <button id="registerPassiveIncomeBtn" style="width:100%; background:#fff; color:#00B5D8; border:2px solid #00B5D8; border-radius:6px; padding:10px 0; font-size:15px; font-weight:600; margin-bottom:8px; cursor:pointer;">Registrar ingreso pasivo</button>
                                     <button style="width:100%; background:#EDF2F7; color:#A0AEC0; border:none; border-radius:6px; padding:10px 0; font-size:15px; font-weight:600; cursor:not-allowed;">Exportar Reporte</button>
                                 </div>
                             </div>
@@ -662,6 +815,16 @@
                     <div class="form-group">
                         <label for="amount">Monto:</label>
                         <input type="number" id="amount" name="amount" step="0.01" min="0" required>
+                        <div class="currency-selector" style="margin-top:10px;">
+                            <label style="margin-right:10px;">
+                                <input type="radio" name="currency" value="USD" checked>
+                                <span style="margin-left:4px;">Dólares ($)</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="currency" value="VES">
+                                <span style="margin-left:4px;">Bolívares (Bs)</span>
+                            </label>
+                        </div>
                     </div>
                     <div class="form-group" id="categoryGroup">
                         <label for="category">Categoría:</label>
@@ -830,5 +993,111 @@
         // Lógica de registro centralizada en app.js
     </script>
 </body>
+    <!-- Modal para registrar cobro en ingreso pasivo -->
+    <div id="passiveIncomeCollectModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" id="closePassiveIncomeCollectModal">&times;</span>
+            <h2 style="color:#00B5D8;">Registrar cobro de ingreso pasivo</h2>
+            <form id="passiveIncomeCollectForm" style="background:#F7FAFC; border-radius:8px; padding:16px; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                <input type="hidden" id="passiveIncomeCollectId">
+                <div class="form-group">
+                    <label for="passiveIncomeCollectAmount">Monto cobrado:</label>
+                    <input type="number" id="passiveIncomeCollectAmount" name="passiveIncomeCollectAmount" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="passiveIncomeCollectCurrency">Moneda:</label>
+                    <select id="passiveIncomeCollectCurrency" name="passiveIncomeCollectCurrency" required>
+                        <option value="USD">Dólares ($)</option>
+                        <option value="VES">Bolívares (Bs)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="passiveIncomeCollectRateGroup" style="display:none;">
+                    <label for="passiveIncomeCollectRate">Tasa de cambio (Bs/$):</label>
+                    <input type="number" id="passiveIncomeCollectRate" name="passiveIncomeCollectRate" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="passiveIncomeCollectDate">Fecha:</label>
+                    <input type="date" id="passiveIncomeCollectDate" name="passiveIncomeCollectDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="passiveIncomeCollectDesc">Descripción:</label>
+                    <input type="text" id="passiveIncomeCollectDesc" name="passiveIncomeCollectDesc" maxlength="100" placeholder="Ej: Pago mensual, ingreso extra, etc." required>
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top:10px;">Registrar cobro</button>
+            </form>
+        </div>
+    </div>
+    <!-- Modal para registrar ingreso pasivo -->
+    <div id="passiveIncomeModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" id="closePassiveIncomeModal">&times;</span>
+            <h2 style="color:#00B5D8;">Registrar ingreso pasivo</h2>
+            <form id="passiveIncomeForm" style="background:#F7FAFC; border-radius:8px; padding:16px; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                <div class="form-group">
+                    <label for="passiveIncomeName">Concepto:</label>
+                    <input type="text" id="passiveIncomeName" name="passiveIncomeName" maxlength="100" placeholder="Ej: Alquiler casa, servicio, etc." required>
+                </div>
+                <div class="form-group">
+                    <label for="passiveIncomeAmount">Monto:</label>
+                    <input type="number" id="passiveIncomeAmount" name="passiveIncomeAmount" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="passiveIncomeCurrency">Moneda:</label>
+                    <select id="passiveIncomeCurrency" name="passiveIncomeCurrency" required>
+                        <option value="USD">Dólares ($)</option>
+                        <option value="VES">Bolívares (Bs)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="passiveIncomeRateGroup" style="display:none;">
+                    <label for="passiveIncomeRate">Tasa de cambio (Bs/$):</label>
+                    <input type="number" id="passiveIncomeRate" name="passiveIncomeRate" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="passiveIncomeDate">Fecha:</label>
+                    <input type="date" id="passiveIncomeDate" name="passiveIncomeDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="passiveIncomeDesc">Descripción:</label>
+                    <input type="text" id="passiveIncomeDesc" name="passiveIncomeDesc" maxlength="100" placeholder="Ej: Pago mensual, ingreso extra, etc." required>
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top:10px;">Registrar ingreso</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para historial de ingreso pasivo -->
+    <div id="passiveIncomeHistoryModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" id="closePassiveIncomeHistoryModal">&times;</span>
+            <h2 style="color:#00B5D8;">Historial de ingreso pasivo</h2>
+            <div id="passiveIncomeHistoryContent">
+                <!-- Aquí se renderiza el historial dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+        <!-- Modal Agregar monto a ingreso pasivo -->
+        <div id="addPassiveIncomeAmountModal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <span class="close" id="closeAddPassiveIncomeAmountModal">&times;</span>
+                <h2 style="color:#00B5D8;">Agregar monto a ingreso pasivo</h2>
+                <form id="addPassiveIncomeAmountForm" style="background:#F7FAFC; border-radius:8px; padding:16px; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                    <input type="hidden" id="addPassiveIncomeAmountId">
+                    <div class="form-group">
+                        <label for="addPassiveIncomeAmount">Monto a agregar ($):</label>
+                        <input type="number" id="addPassiveIncomeAmount" name="addPassiveIncomeAmount" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addPassiveIncomeDate">Fecha:</label>
+                        <input type="date" id="addPassiveIncomeDate" name="addPassiveIncomeDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addPassiveIncomeDesc">Descripción:</label>
+                        <input type="text" id="addPassiveIncomeDesc" name="addPassiveIncomeDesc" maxlength="100" placeholder="Ej: Ajuste, aumento, etc." required>
+                    </div>
+                    <button type="submit" class="btn-primary" style="margin-top:10px;">Registrar aumento</button>
+                </form>
+            </div>
+        </div>
 
 </html>

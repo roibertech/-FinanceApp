@@ -1,23 +1,55 @@
+console.log('[DEBUG] Archivo transactions.js cargado');
 // Gestión de transacciones
 class TransactionsManager {
     // Permite registrar una transacción directamente desde otros módulos
-    async handleTransactionSubmitDirect({type, amount, category, description, date, time}) {
-        // Combinar fecha y hora en un solo string ISO
-        const dateTime = date && time ? `${date}T${time}:00` : new Date().toISOString();
+    async handleTransactionSubmitDirect({ type, amount, category, description, date, time, currency, rate }) {
+        // Usar la fecha seleccionada por el usuario en formato YYYY-MM-DD
+        let dateStr = date;
+        if (dateStr && dateStr.includes('T')) {
+            dateStr = dateStr.split('T')[0];
+        }
+        // Si la fecha viene en formato DD/MM/YYYY, convertir a YYYY-MM-DD
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+            const [day, month, year] = dateStr.split('/');
+            dateStr = `${year}-${month}-${day}`;
+        }
+        // Combinar fecha y hora en un solo string ISO para auditoría interna, pero guardar date y time por separado
+        const dateTime = dateStr && time ? `${dateStr}T${time}:00` : new Date().toISOString();
+        // Permitir que exchangeId se pase desde el objeto
         const transaction = {
             type,
             amount,
             category,
             description,
-            date: dateTime
+            date: dateStr,
+            time: time,
+            currency,
+            ...(arguments[0].exchangeId ? { exchangeId: arguments[0].exchangeId } : {}),
+            ...(arguments[0].passiveIncomeId ? { passiveIncomeId: arguments[0].passiveIncomeId } : {})
         };
+        // Si es gasto en VES, calcular convertedUSD usando la tasa manual si viene del flujo de deuda/cobro/ingreso pasivo
+        if ((type === 'expense' || type === 'income') && currency === 'VES') {
+            // Si se pasa una tasa manual, usarla; si no, usar la del sistema (solo para otros flujos)
+            let usedRate = rate;
+            if (!usedRate || usedRate <= 0) {
+                if (window.currencyManager && window.currencyManager.fetchRates) {
+                    await window.currencyManager.fetchRates('USD');
+                }
+                usedRate = window.currencyManager ? window.currencyManager.getRate('VES', 'USD') : 0;
+            }
+            transaction.convertedUSD = (usedRate && amount > 0) ? Number((amount / usedRate).toFixed(2)) : 0;
+            transaction.rate = usedRate;
+            console.log(`[CONVERSION VES→USD] Monto VES: ${amount} | Tasa usada: ${usedRate} | Monto USD: ${transaction.convertedUSD}`);
+        }
         const result = await dbManager.addTransaction(transaction);
         if (result.success) {
             if (window.transactionsPage && window.transactionsPage.currentPage === 'transactions') {
                 window.transactionsPage.loadTransactions();
             }
-            if (window.dashboardManager && window.dashboardManager.updateDashboard) {
-                window.dashboardManager.updateDashboard();
+            // Forzar recarga de la gráfica diaria con los datos más recientes
+            if (window.dashboardManager && window.dashboardManager.updateCharts) {
+                const txs = await dbManager.getRecentTransactions(100);
+                window.dashboardManager.updateCharts(txs);
             }
             if (window.UI && window.UI.showSuccess) {
                 window.UI.showSuccess('Transacción registrada automáticamente');
@@ -67,15 +99,34 @@ class TransactionsManager {
     init() {
         this.setupEventListeners();
         this.loadCategoryOptions('income'); // Cargar categorías por defecto (ingreso)
+        // Actualizar el placeholder del monto según la moneda seleccionada
+        const currencyRadios = document.querySelectorAll('input[name="currency"]');
+        currencyRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                const symbol = radio.value === 'VES' ? 'Bs' : '$';
+                const amountInput = document.getElementById('amount');
+                if (amountInput) {
+                    amountInput.placeholder = `Monto (${symbol})`;
+                }
+            });
+        });
     }
 
     // Configurar event listeners
     setupEventListeners() {
         // Listener para el formulario de transacciones
-        document.getElementById('transactionForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleTransactionSubmit();
-        });
+        const transactionForm = document.getElementById('transactionForm');
+        if (!transactionForm._listenerAdded) {
+            transactionForm.addEventListener('submit', (e) => {
+                console.log('[TRANSACTION FORM SUBMIT] Listener disparado');
+                e.preventDefault();
+                this.handleTransactionSubmit();
+            });
+            transactionForm._listenerAdded = true;
+            console.log('[TRANSACTION FORM] Listener de submit agregado');
+        } else {
+            console.log('[TRANSACTION FORM] Listener de submit ya estaba agregado');
+        }
 
         // Listener para el tipo de transacción (cambiar categorías)
         document.getElementById('type').addEventListener('change', (e) => {
@@ -94,7 +145,7 @@ class TransactionsManager {
         categorySelect.innerHTML = '';
 
         const categories = this.categories[type] || [];
-        
+
         categories.forEach(category => {
             const option = document.createElement('option');
             option.value = category.value;
@@ -108,7 +159,7 @@ class TransactionsManager {
         // Establecer fecha y hora actual por defecto
         const now = new Date();
         document.getElementById('date').value = now.toISOString().split('T')[0];
-        document.getElementById('time').value = now.toTimeString().slice(0,5);
+        document.getElementById('time').value = now.toTimeString().slice(0, 5);
         // Siempre mostrar 'Agregar Transacción' al abrir
         document.getElementById('transactionModalTitle').textContent = 'Agregar Transacción';
         document.getElementById('transactionDeleteBtn').style.display = 'none';
@@ -126,71 +177,117 @@ class TransactionsManager {
 
     // Manejar envío del formulario de transacción
     async handleTransactionSubmit() {
+        console.log('[DEBUG] handleTransactionSubmit INICIO');
+        // Log para confirmar fecha/hora seleccionadas
+        const dateInput = document.getElementById('date');
+        const timeInput = document.getElementById('time');
+        const selectedDate = dateInput ? dateInput.value : null;
+        const selectedTime = timeInput ? timeInput.value : null;
+        console.log('[LOG] Fecha seleccionada en formulario:', selectedDate);
+        console.log('[LOG] Hora seleccionada en formulario:', selectedTime);
         const type = document.getElementById('type').value;
         const amountInput = document.getElementById('amount');
         let amount = parseFloat(amountInput.value);
         const category = document.getElementById('category').value;
         const description = document.getElementById('description').value;
-        const date = document.getElementById('date').value;
+        let date = document.getElementById('date').value;
         const time = document.getElementById('time').value;
+        // Convertir fecha de DD/MM/YYYY a YYYY-MM-DD si es necesario
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
+            const [day, month, year] = date.split('/');
+            date = `${year}-${month}-${day}`;
+        }
+        // Obtener moneda seleccionada
+        const currency = document.querySelector('input[name="currency"]:checked')?.value || 'USD';
         // Validaciones
         if (amount <= 0) {
             UI.showError('El monto debe ser mayor a cero');
             return;
         }
-        // Convertir a USD si la moneda seleccionada no es USD
-        const moneda = document.getElementById('currencySelect') ? document.getElementById('currencySelect').value : 'USD';
-        const cm = window.currencyManager;
-        if (cm && moneda !== 'USD') {
-            // Convertir de moneda seleccionada a USD
-            amount = cm.convert(amount, moneda, 'USD');
-        }
-        if (type !== 'income' && amount > dbManager.getCurrentFinances().totalBalance) {
-            UI.showError('Fondos insuficientes para esta transacción');
-            return;
-        }
-        // Combinar fecha y hora en un solo string ISO
-        const dateTime = date && time ? `${date}T${time}:00` : new Date().toISOString();
+        // Combinar fecha y hora en un solo string ISO, usar la seleccionada por el usuario
+        const dateTime = (date && time) ? `${date}T${time}:00` : new Date().toISOString();
+        // Detectar si es edición (campo oculto transactionId)
+        const transactionId = document.getElementById('transactionId')?.value;
         const transaction = {
             type,
             amount,
+            currency,
             category,
             description,
-            date: dateTime
+            date: date,
+            time: time
         };
+        // Si es gasto en VES, actualizar tasas y calcular convertedUSD antes de guardar
+        if (type === 'expense' && currency === 'VES') {
+            if (window.currencyManager && window.currencyManager.fetchRates) {
+                await window.currencyManager.fetchRates('USD');
+            }
+            const rate = window.currencyManager ? window.currencyManager.getRate('VES', 'USD') : 0;
+            // Conversión estándar: USD = VES / tasa VES→USD
+            transaction.convertedUSD = (rate && amount > 0) ? Number((amount / rate).toFixed(2)) : 0;
+            transaction.rate = rate;
+            console.log(`[CONVERSION VES→USD] Monto VES: ${amount} | Tasa usada: ${rate} | Monto USD: ${transaction.convertedUSD}`);
+        }
         const user = authManager.getCurrentUser();
-        const result = await dbManager.addTransaction(transaction);
+        let result;
+        if (transactionId) {
+            // Edición: actualizar transacción existente
+            transaction.id = transactionId;
+            result = await this.updateTransaction(transaction);
+        } else {
+            // Nuevo registro
+            result = await dbManager.addTransaction(transaction);
+        }
+        console.log('[DEBUG] Resultado de transacción:', result);
         if (result.success) {
+            console.log('[DEBUG] Transacción guardada correctamente, actualizando historial...');
             // Limpiar formulario
             document.getElementById('transactionForm').reset();
             // Recargar categorías por defecto
             this.loadCategoryOptions('income');
+            // Actualizar historial de inmediato y esperar a que termine
+            if (window.transactionsPage) {
+                console.log('[DEBUG] Actualizando historial...');
+                await window.transactionsPage.loadTransactions();
+                console.log('[DEBUG] Historial actualizado');
+            }
             // Cerrar modal
             UI.hideModal(UI.modals.transaction);
             // Restaurar título
             document.getElementById('transactionModalTitle').textContent = 'Agregar Transacción';
             // Mostrar mensaje de éxito
-            UI.showSuccess('Transacción agregada correctamente');
-            // Si estamos en la página de transacciones, actualizar la lista automáticamente
-            if (window.transactionsPage && window.transactionsPage.currentPage === 'transactions') {
-                window.transactionsPage.loadTransactions();
-            }
+            UI.showSuccess(transactionId ? 'Transacción editada correctamente' : 'Transacción agregada correctamente');
         } else {
             UI.showError(result.error);
         }
     }
 
+    // Método para actualizar una transacción existente
+    async updateTransaction(transaction) {
+        // Actualizar en la base de datos
+        const result = await dbManager.updateTransaction(transaction);
+        // Sincronizar historial si es necesario
+        if (result.success && window.transactionsPage) {
+            await window.transactionsPage.loadTransactions();
+        }
+        return result;
+    }
+
     // Cargar y mostrar transacciones
     async loadTransactions() {
+        console.log('[DEBUG] loadTransactions INICIO');
+        console.log('[DEBUG] loadTransactions llamado');
         const user = authManager.getCurrentUser();
         if (!user) return;
 
         this.transactions = await dbManager.getRecentTransactions();
+        console.log('[DEBUG] Transacciones obtenidas de la base de datos:', this.transactions);
         this.displayTransactions();
     }
 
     // Mostrar transacciones en la UI
     displayTransactions() {
+        console.log('[DEBUG] displayTransactions llamado, transacciones:', this.transactions);
         const transactionsList = document.getElementById('transactionsList');
         transactionsList.innerHTML = '';
 
@@ -222,6 +319,11 @@ class TransactionsManager {
             month: 'short'
         });
 
+        // Mostrar símbolo según la moneda
+        let symbol = '$';
+        if (transaction.currency === 'VES') symbol = 'Bs';
+        else if (transaction.currency === 'EUR') symbol = '€';
+
         div.innerHTML = `
             <div class="transaction-icon">
                 ${this.getCategoryIcon(transaction.category, transaction.type)}
@@ -231,7 +333,7 @@ class TransactionsManager {
                 <div class="transaction-category">${this.getCategoryLabel(transaction.category, transaction.type)} • ${formattedDate}</div>
             </div>
             <div class="transaction-amount ${amountClass}">
-                ${sign}$${transaction.amount.toFixed(2)}
+                ${sign}${symbol}${transaction.amount.toFixed(2)}
             </div>
         `;
 
@@ -248,7 +350,7 @@ class TransactionsManager {
             gift: '🎁',
             extra_income: '💸',
             other_income: '📊',
-            
+
             // Gastos
             grocery: '🛒',
             utilities: '🏠',
@@ -261,7 +363,7 @@ class TransactionsManager {
             housing: '🏡',
             emergency: '🚨',
             other_expense: '📋',
-            
+
             // Ahorros
             savings_transfer: '💰',
             emergency_fund: '🛡️',
@@ -269,7 +371,7 @@ class TransactionsManager {
             goal: '🎯',
             other_savings: '📊'
         };
-        
+
         return icons[category] || (type === 'income' ? '💰' : (type === 'savings' ? '💰' : '💸'));
     }
 
@@ -283,7 +385,7 @@ class TransactionsManager {
     // Obtener transacciones por categoría para gráficos
     getTransactionsByCategory(transactions, type) {
         const categories = {};
-        
+
         transactions.forEach(transaction => {
             if (transaction.type === type) {
                 if (!categories[transaction.category]) {
@@ -292,7 +394,7 @@ class TransactionsManager {
                 categories[transaction.category] += transaction.amount;
             }
         });
-        
+
         return categories;
     }
 }

@@ -1,69 +1,27 @@
 // --- Cambio de moneda global ---
-document.addEventListener('DOMContentLoaded', function() {
-    const currencySelect = document.getElementById('currencySelect');
-    if (currencySelect && window.currencyManager) {
-        // Cargar preferencia guardada
-        const savedCurrency = localStorage.getItem('selectedCurrency') || 'USD';
-        currencySelect.value = savedCurrency;
-        // Al iniciar, obtener tasas y actualizar UI
-        window.currencyManager.fetchRates(savedCurrency).then(() => {
-            actualizarMontosGlobal(savedCurrency);
-        });
-        // Listener de cambio
-        currencySelect.addEventListener('change', async function() {
-            const newCurrency = currencySelect.value;
-            localStorage.setItem('selectedCurrency', newCurrency);
-            await window.currencyManager.fetchRates(newCurrency);
-            actualizarMontosGlobal(newCurrency);
-            // Forzar recarga de deudas y créditos para actualizar símbolos y resumen
-            if (window.debtCreditManager && typeof debtCreditManager.loadAndRender === 'function') {
-                debtCreditManager.loadAndRender();
-            }
-            // Forzar renderizado del resumen de préstamos y deudas en dashboard
-            if (window.dashboardManager && typeof dashboardManager.updateLoansDebtsSummary === 'function') {
-                dashboardManager.updateLoansDebtsSummary();
-            }
-        });
+// Eliminada lógica de cambio de moneda global. El sistema queda fijo en USD ($).
+const ids = [
+    { id: 'totalBalance', val: dashboardManager.stats.totalBalance },
+    { id: 'monthlyExpenses', val: dashboardManager.stats.monthlyExpenses },
+    { id: 'monthlyIncome', val: dashboardManager.stats.monthlyIncome },
+    { id: 'totalSavings', val: dashboardManager.stats.totalSavings }
+];
+ids.forEach(({ id, val }) => {
+    const el = document.getElementById(id);
+    if (el) {
+        el.textContent = '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 });
-
-// Función para actualizar todos los montos de la UI principal
-function actualizarMontosGlobal(moneda) {
-    // Cambiar símbolo y nombre en el selector
-    const flag = document.getElementById('currencyFlag');
-    if (flag) {
-        flag.textContent = moneda === 'USD' ? '$' : (moneda === 'EUR' ? '€' : 'Bs');
-    }
-    // Actualizar tarjetas principales
-    if (window.dashboardManager && dashboardManager.stats) {
-        const base = dashboardManager.stats.baseCurrency || 'USD';
-        const cm = window.currencyManager;
-        // Convertir y mostrar
-        const ids = [
-            {id: 'totalBalance', val: dashboardManager.stats.totalBalance},
-            {id: 'monthlyExpenses', val: dashboardManager.stats.monthlyExpenses},
-            {id: 'monthlyIncome', val: dashboardManager.stats.monthlyIncome},
-            {id: 'totalSavings', val: dashboardManager.stats.totalSavings}
-        ];
-        ids.forEach(({id, val}) => {
-            const el = document.getElementById(id);
-            if (el) {
-                const conv = cm.convert(val, base, moneda);
-                el.textContent = (moneda === 'VES' ? 'Bs ' : (moneda === 'EUR' ? '€' : '$')) + conv.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
-            }
-        });
-    }
-    // Actualizar resumen de préstamos y deudas
-    if (window.dashboardManager && typeof dashboardManager.updateLoansDebtsSummary === 'function') {
-        dashboardManager.updateLoansDebtsSummary();
-    }
-    // Actualizar transacciones recientes (si es necesario)
-    // Refrescar transacciones recientes usando los datos actuales del dashboard
-    if (window.dashboardManager && typeof dashboardManager.updateDashboard === 'function') {
-        dashboardManager.updateDashboard();
-    }
-    // Actualizar otras páginas si es necesario (puedes expandir aquí)
+// Actualizar resumen de préstamos y deudas
+if (window.dashboardManager && typeof dashboardManager.updateLoansDebtsSummary === 'function') {
+    dashboardManager.updateLoansDebtsSummary();
 }
+// Actualizar transacciones recientes (si es necesario)
+// Refrescar transacciones recientes usando los datos actuales del dashboard
+if (window.dashboardManager && typeof dashboardManager.updateDashboard === 'function') {
+    dashboardManager.updateDashboard();
+}
+// Actualizar otras páginas si es necesario (puedes expandir aquí)
 // Aplicación principal
 class FinanceApp {
     constructor() {
@@ -73,19 +31,19 @@ class FinanceApp {
     // Inicializar la aplicación
     async init() {
         if (this.initialized) return;
-        
+
         // Establecer usuario actual en dbManager
         const user = authManager.getCurrentUser();
         dbManager.setCurrentUser(user);
-        
+
         // Inicializar módulos
         dashboardManager.init();
         transactionsManager.init();
         transactionsPage.init();
-        
+
         // Inicializar gráficos
         chartsManager.initCharts();
-        
+
         this.initialized = true;
         console.log('Aplicación inicializada');
     }
@@ -93,20 +51,20 @@ class FinanceApp {
     // Reiniciar la aplicación (para logout)
     reset() {
         this.initialized = false;
-        
+
         // Limpiar listeners
         dashboardManager.cleanup();
-        
+
         // Limpiar datos
         dbManager.setCurrentUser(null);
-        
+
         // Limpiar UI
         document.getElementById('totalBalance').textContent = '$0.00';
         document.getElementById('monthlyExpenses').textContent = '$0.00';
         document.getElementById('monthlyIncome').textContent = '$0.00';
         document.getElementById('totalSavings').textContent = '$0.00';
         document.getElementById('transactionsList').innerHTML = '';
-        
+
         // Limpiar gráficos de Chart.js de forma segura
         // Aseguramos que window.dailySpendingChart y window.categoryExpensesChart apunten a los del chartsManager
         if (typeof chartsManager !== 'undefined') {
@@ -127,6 +85,7 @@ class FinanceApp {
             window.categoryExpensesChart = null;
             if (typeof chartsManager !== 'undefined') chartsManager.categoryExpensesChart = null;
         }
+
     }
 }
 
@@ -134,7 +93,7 @@ class FinanceApp {
 const App = new FinanceApp();
 
 // Inicializar Firebase y autenticación cuando se carga la página
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Mostrar loader y ocultar login/app al iniciar
     const loader = document.getElementById('loader');
     const app = document.getElementById('app');
