@@ -435,10 +435,13 @@ class TransactionsPage {
         div.className = 'transaction-item-full';
         const isIncome = transaction.type === 'income';
         const isSavings = transaction.type === 'savings';
-        // Ajuste para exchange en VES
         let sign = isIncome ? '+' : '-';
         let amountClass = isIncome ? 'positive' : (isSavings ? 'savings' : 'negative');
-        if (transaction.type === 'exchange') {
+        // Ajuste para saldo inicial
+        if (transaction.type === 'initial_balance') {
+            sign = '';
+            amountClass = 'positive';
+        } else if (transaction.type === 'exchange') {
             if (transaction.currency === 'VES') {
                 if (transaction.description && transaction.description.toLowerCase().includes('recibido de cambio')) {
                     sign = '+';
