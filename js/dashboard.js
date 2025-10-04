@@ -143,32 +143,39 @@ class DashboardManager {
             const txMonth = t.date.slice(0,7);
             return txMonth === currentMonth;
         });
-        // Calcular subtotales SOLO del mes actual
-        const subtotalUSD = monthlyTransactions.filter(t => t.currency === 'USD' && (t.type === 'income' || t.type === 'savings')).reduce((sum, t) => sum + t.amount, 0)
-            - monthlyTransactions.filter(t => t.currency === 'USD' && t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-        const subtotalVES = monthlyTransactions.filter(t => t.currency === 'VES' && (t.type === 'income' || t.type === 'savings')).reduce((sum, t) => sum + t.amount, 0)
-            - monthlyTransactions.filter(t => t.currency === 'VES' && t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+        // Calcular saldo inicial de cada caja
+        const initialUSD = monthlyTransactions.find(t => t.type === 'initial_balance' && t.currency === 'USD');
+        const initialVES = monthlyTransactions.find(t => t.type === 'initial_balance' && t.currency === 'VES');
+        // Calcular movimientos del mes actual
+        const filteredNoInitial = monthlyTransactions.filter(t => t.type !== 'initial_balance');
+        const totalIncomeUSD = filteredNoInitial.filter(t => t.type === 'income' && t.currency === 'USD').reduce((sum, t) => sum + t.amount, 0);
+        const totalExpenseUSD = filteredNoInitial.filter(t => t.type === 'expense' && t.currency === 'USD').reduce((sum, t) => sum + t.amount, 0);
+        const totalSavingsUSD = filteredNoInitial.filter(t => t.type === 'savings' && t.currency === 'USD').reduce((sum, t) => sum + t.amount, 0);
+        const totalIncomeVES = filteredNoInitial.filter(t => t.type === 'income' && t.currency === 'VES').reduce((sum, t) => sum + t.amount, 0);
+        const totalExpenseVES = filteredNoInitial.filter(t => t.type === 'expense' && t.currency === 'VES').reduce((sum, t) => sum + t.amount, 0);
+        const totalSavingsVES = filteredNoInitial.filter(t => t.type === 'savings' && t.currency === 'VES').reduce((sum, t) => sum + t.amount, 0);
+        // Sumar saldo inicial + movimientos
+        let subtotalUSD = (initialUSD ? initialUSD.amount : 0) + totalIncomeUSD - totalExpenseUSD + totalSavingsUSD;
+        let subtotalVES = (initialVES ? initialVES.amount : 0) + totalIncomeVES - totalExpenseVES + totalSavingsVES;
+        // Procesar exchanges igual que en transactions-page.js
+        monthlyTransactions.filter(t => t.type === 'exchange').forEach(t => {
+            if (t.currency === 'USD' && t.category && t.category.includes('_to_ves')) {
+                subtotalUSD -= t.amount;
+            }
+            if (t.currency === 'VES' && t.category && t.category.includes('_from_usd')) {
+                subtotalVES += t.amount;
+            }
+            if (t.currency === 'VES' && t.category && t.category.includes('_to_usd')) {
+                subtotalVES -= t.amount;
+            }
+            if (t.currency === 'USD' && t.category && t.category.includes('_from_ves')) {
+                subtotalUSD += t.amount;
+            }
+        });
         // Calcular el balance total según la moneda seleccionada
         let balanceTotal = 0;
         if (moneda === 'USD') {
-            // Procesar exchanges igual que en transactions-page.js
-            let subtotalUSD_final = subtotalUSD;
-            let subtotalVES_final = subtotalVES;
-            monthlyTransactions.filter(t => t.type === 'exchange').forEach(t => {
-                if (t.currency === 'USD' && t.category && t.category.includes('_to_ves')) {
-                    subtotalUSD_final -= t.amount;
-                }
-                if (t.currency === 'VES' && t.category && t.category.includes('_from_usd')) {
-                    subtotalVES_final += t.amount;
-                }
-                if (t.currency === 'VES' && t.category && t.category.includes('_to_usd')) {
-                    subtotalVES_final -= t.amount;
-                }
-                if (t.currency === 'USD' && t.category && t.category.includes('_from_ves')) {
-                    subtotalUSD_final += t.amount;
-                }
-            });
-            balanceTotal = subtotalUSD_final + (subtotalVES_final / tasa);
+            balanceTotal = subtotalUSD + (subtotalVES / tasa);
         } else {
             balanceTotal = subtotalVES + (subtotalUSD * tasa);
         }
@@ -194,8 +201,7 @@ class DashboardManager {
         }
         document.getElementById('monthlyIncome').textContent = (moneda === 'USD' ? '$' : 'Bs ') + totalMonthlyIncome.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
         // Ahorros SOLO del mes actual
-        const totalSavingsUSD = monthlyTransactions.filter(t => t.currency === 'USD' && t.type === 'savings').reduce((sum, t) => sum + t.amount, 0);
-        const totalSavingsVES = monthlyTransactions.filter(t => t.currency === 'VES' && t.type === 'savings').reduce((sum, t) => sum + t.amount, 0);
+    // (Eliminado: ya se calcula arriba con el saldo inicial)
         let totalSavings = 0;
         if (moneda === 'USD') {
             totalSavings = totalSavingsUSD + (totalSavingsVES / tasa);

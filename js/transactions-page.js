@@ -10,49 +10,79 @@ class TransactionsPage {
         const now = new Date();
         const currentMonth = now.toISOString().slice(0, 7); // 'YYYY-MM'
         // Buscar si ya existe una transacción de saldo inicial para este mes
-        const transactions = await dbManager.getRecentTransactions(10); // Solo las últimas 10 para eficiencia
-        const alreadyRegisteredUSD = transactions.some(t => t.type === 'initial_balance' && t.currency === 'USD' && t.date && t.date.slice(0,7) === currentMonth);
-        const alreadyRegisteredVES = transactions.some(t => t.type === 'initial_balance' && t.currency === 'VES' && t.date && t.date.slice(0,7) === currentMonth);
-        // Solo registrar si es el primer día del mes y no existe aún
-        if (now.getDate() === 1) {
-            // Calcular saldo final del mes anterior
+        const transactions = await dbManager.getRecentTransactions(20);
+        const alreadyRegisteredUSD = transactions.filter(t => t.type === 'initial_balance' && t.currency === 'USD' && t.date && t.date.slice(0,7) === currentMonth);
+        const alreadyRegisteredVES = transactions.filter(t => t.type === 'initial_balance' && t.currency === 'VES' && t.date && t.date.slice(0,7) === currentMonth);
+        // Eliminar duplicados si existen
+        if (alreadyRegisteredUSD.length > 1) {
+            for (let i = 1; i < alreadyRegisteredUSD.length; i++) {
+                await dbManager.deleteTransaction(alreadyRegisteredUSD[i].id);
+            }
+        }
+        if (alreadyRegisteredVES.length > 1) {
+            for (let i = 1; i < alreadyRegisteredVES.length; i++) {
+                await dbManager.deleteTransaction(alreadyRegisteredVES[i].id);
+            }
+        }
+        // Si no existe saldo inicial para USD, registrar solo uno
+        if (alreadyRegisteredUSD.length === 0) {
             const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
             const prevMonthStr = prevMonth.toISOString().slice(0, 7);
-            const allTransactions = await dbManager.getRecentTransactions(200); // Buscar suficiente historial
-            // USD
-            if (!alreadyRegisteredUSD) {
-                const usdTx = allTransactions.filter(t => t.currency === 'USD' && t.date && t.date.slice(0,7) === prevMonthStr);
-                const saldoFinalUSD = usdTx.filter(t => t.type === 'income' || t.type === 'savings').reduce((sum, t) => sum + t.amount, 0)
-                    - usdTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-                if (saldoFinalUSD !== 0) {
-                    await dbManager.addTransaction({
-                        type: 'initial_balance',
-                        amount: saldoFinalUSD,
-                        category: 'initial_balance',
-                        description: `Saldo inicial USD mes ${currentMonth}`,
-                        date: now.toISOString().slice(0,10),
-                        time: now.toTimeString().slice(0,5),
-                        currency: 'USD'
-                    });
+            const allTransactions = await dbManager.getRecentTransactions(500);
+            const filtered = allTransactions.filter(t => t.date && t.date.slice(0,7) === prevMonthStr);
+            const filteredNoInitial = filtered.filter(t => t.type !== 'initial_balance');
+            const initialUSD = filtered.find(t => t.type === 'initial_balance' && t.currency === 'USD');
+            const totalIncomeUSD = filteredNoInitial.filter(t => t.type === 'income' && t.currency === 'USD').reduce((sum, t) => sum + t.amount, 0);
+            const totalExpenseUSD = filteredNoInitial.filter(t => t.type === 'expense' && t.currency === 'USD').reduce((sum, t) => sum + t.amount, 0);
+            const totalSavingsUSD = filteredNoInitial.filter(t => t.type === 'savings' && t.currency === 'USD').reduce((sum, t) => sum + t.amount, 0);
+            let subtotalUSD = (initialUSD ? initialUSD.amount : 0) + totalIncomeUSD - totalExpenseUSD + totalSavingsUSD;
+            filtered.filter(t => t.type === 'exchange').forEach(t => {
+                if (t.currency === 'USD' && t.category && t.category.includes('_to_ves')) {
+                    subtotalUSD -= t.amount;
                 }
-            }
-            // VES
-            if (!alreadyRegisteredVES) {
-                const vesTx = allTransactions.filter(t => t.currency === 'VES' && t.date && t.date.slice(0,7) === prevMonthStr);
-                const saldoFinalVES = vesTx.filter(t => t.type === 'income' || t.type === 'savings').reduce((sum, t) => sum + t.amount, 0)
-                    - vesTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-                if (saldoFinalVES !== 0) {
-                    await dbManager.addTransaction({
-                        type: 'initial_balance',
-                        amount: saldoFinalVES,
-                        category: 'initial_balance',
-                        description: `Saldo inicial VES mes ${currentMonth}`,
-                        date: now.toISOString().slice(0,10),
-                        time: now.toTimeString().slice(0,5),
-                        currency: 'VES'
-                    });
+                if (t.currency === 'USD' && t.category && t.category.includes('_from_ves')) {
+                    subtotalUSD += t.amount;
                 }
-            }
+            });
+            await dbManager.addTransaction({
+                type: 'initial_balance',
+                amount: subtotalUSD,
+                category: 'initial_balance',
+                description: `Saldo inicial USD mes ${currentMonth}`,
+                date: now.toISOString().slice(0,10),
+                time: now.toTimeString().slice(0,5),
+                currency: 'USD'
+            });
+        }
+        // Si no existe saldo inicial para VES, registrar solo uno
+        if (alreadyRegisteredVES.length === 0) {
+            const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const prevMonthStr = prevMonth.toISOString().slice(0, 7);
+            const allTransactions = await dbManager.getRecentTransactions(500);
+            const filtered = allTransactions.filter(t => t.date && t.date.slice(0,7) === prevMonthStr);
+            const filteredNoInitial = filtered.filter(t => t.type !== 'initial_balance');
+            const initialVES = filtered.find(t => t.type === 'initial_balance' && t.currency === 'VES');
+            const totalIncomeVES = filteredNoInitial.filter(t => t.type === 'income' && t.currency === 'VES').reduce((sum, t) => sum + t.amount, 0);
+            const totalExpenseVES = filteredNoInitial.filter(t => t.type === 'expense' && t.currency === 'VES').reduce((sum, t) => sum + t.amount, 0);
+            const totalSavingsVES = filteredNoInitial.filter(t => t.type === 'savings' && t.currency === 'VES').reduce((sum, t) => sum + t.amount, 0);
+            let subtotalVES = (initialVES ? initialVES.amount : 0) + totalIncomeVES - totalExpenseVES + totalSavingsVES;
+            filtered.filter(t => t.type === 'exchange').forEach(t => {
+                if (t.currency === 'VES' && t.category && t.category.includes('_to_usd')) {
+                    subtotalVES -= t.amount;
+                }
+                if (t.currency === 'VES' && t.category && t.category.includes('_from_usd')) {
+                    subtotalVES += t.amount;
+                }
+            });
+            await dbManager.addTransaction({
+                type: 'initial_balance',
+                amount: subtotalVES,
+                category: 'initial_balance',
+                description: `Saldo inicial VES mes ${currentMonth}`,
+                date: now.toISOString().slice(0,10),
+                time: now.toTimeString().slice(0,5),
+                currency: 'VES'
+            });
         }
     }
     constructor() {
@@ -325,6 +355,10 @@ class TransactionsPage {
                 await window.currencyManager.fetchRates('USD');
             }
             this.transactions = await dbManager.getRecentTransactions(100); // Obtener más transacciones
+            // Al abrir la pantalla, filtrar por el mes actual por defecto
+            const now = new Date();
+            const currentMonth = now.toISOString().slice(0, 7);
+            this.currentFilters.month = currentMonth;
             this.applyFilters();
             this.updateSummary();
             this.updateAvailableBalance();
@@ -731,20 +765,26 @@ class TransactionsPage {
             });
         }
 
-        // Cálculo principal de subtotales y logs de depuración
-        const totalIncomeUSD = filtered.filter(t => t.type === 'income' && t.currency === 'USD').reduce((sum, t) => sum + t.amount, 0);
-        const totalExpenseUSD = filtered.filter(t => t.type === 'expense' && t.currency === 'USD').reduce((sum, t) => sum + t.amount, 0);
-        const totalSavingsUSD = filtered.filter(t => t.type === 'savings' && t.currency === 'USD').reduce((sum, t) => sum + t.amount, 0);
-        const totalIncomeVES = filtered.filter(t => t.type === 'income' && t.currency === 'VES').reduce((sum, t) => sum + t.amount, 0);
-        const totalExpenseVES = filtered.filter(t => t.type === 'expense' && t.currency === 'VES').reduce((sum, t) => sum + t.amount, 0);
-        const totalSavingsVES = filtered.filter(t => t.type === 'savings' && t.currency === 'VES').reduce((sum, t) => sum + t.amount, 0);
+    // Excluir 'initial_balance' de los totales de ingresos y gastos, pero usarlo como saldo base
+    const filteredNoInitial = filtered.filter(t => t.type !== 'initial_balance');
+    // Obtener saldo inicial del mes actual
+    const initialUSD = filtered.find(t => t.type === 'initial_balance' && t.currency === 'USD');
+    const initialVES = filtered.find(t => t.type === 'initial_balance' && t.currency === 'VES');
+    const totalIncomeUSD = filteredNoInitial.filter(t => t.type === 'income' && t.currency === 'USD').reduce((sum, t) => sum + t.amount, 0);
+    const totalExpenseUSD = filteredNoInitial.filter(t => t.type === 'expense' && t.currency === 'USD').reduce((sum, t) => sum + t.amount, 0);
+    const totalSavingsUSD = filteredNoInitial.filter(t => t.type === 'savings' && t.currency === 'USD').reduce((sum, t) => sum + t.amount, 0);
+    const totalIncomeVES = filteredNoInitial.filter(t => t.type === 'income' && t.currency === 'VES').reduce((sum, t) => sum + t.amount, 0);
+    const totalExpenseVES = filteredNoInitial.filter(t => t.type === 'expense' && t.currency === 'VES').reduce((sum, t) => sum + t.amount, 0);
+    const totalSavingsVES = filteredNoInitial.filter(t => t.type === 'savings' && t.currency === 'VES').reduce((sum, t) => sum + t.amount, 0);
+    // El saldo inicial se suma al subtotal
+    let subtotalUSD = (initialUSD ? initialUSD.amount : 0) + totalIncomeUSD - totalExpenseUSD + totalSavingsUSD;
+    let subtotalVES = (initialVES ? initialVES.amount : 0) + totalIncomeVES - totalExpenseVES + totalSavingsVES;
 
         console.log('[DEBUG] Subtotales antes de exchange:', {
             totalIncomeUSD, totalExpenseUSD, totalSavingsUSD,
             totalIncomeVES, totalExpenseVES, totalSavingsVES
         });
-        let subtotalUSD = totalIncomeUSD - totalExpenseUSD + totalSavingsUSD;
-        let subtotalVES = totalIncomeVES - totalExpenseVES + totalSavingsVES;
+    // (Eliminado: ya se calcula arriba con el saldo inicial)
         // Log para depurar el valor original de la caja VES antes de exchange
         if (window.currencyManager && window.currencyManager.rates) {
             const tasaActual = window.currencyManager.rates['VES'];
